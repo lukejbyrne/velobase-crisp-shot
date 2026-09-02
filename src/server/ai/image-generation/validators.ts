@@ -14,7 +14,7 @@ const metadataSchema = z
     "Business metadata stored by the framework and never sent to providers.",
   );
 
-export const imageGenerationProviderSchema = z.enum(["wavespeed"]);
+export const imageGenerationProviderSchema = z.enum(["wavespeed", "kie"]);
 
 export const imageGenerationOperationSchema = z.enum([
   "text-to-image",

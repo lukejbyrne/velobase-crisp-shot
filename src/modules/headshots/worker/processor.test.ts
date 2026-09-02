@@ -55,8 +55,8 @@ mockModule(new URL("../../../env.js", import.meta.url).href, {
   namedExports: {
     env: {
       NODE_ENV: "test",
-      HEADSHOT_IMAGE_PROVIDER: "wavespeed",
-      HEADSHOT_IMAGE_MODEL: "openai/gpt-image-2/edit",
+      HEADSHOT_IMAGE_PROVIDER: "kie",
+      HEADSHOT_IMAGE_MODEL: "gpt-image-2-image-to-image",
       HEADSHOT_IMAGE_RESOLUTION: undefined,
       HEADSHOT_IMAGE_ASPECT_RATIO: "1:1",
       HEADSHOT_BATCH_SIZE: 4,
@@ -106,8 +106,8 @@ mockModule(new URL("../server/credits.ts", import.meta.url).href, {
 mockModule(new URL("../server/config.ts", import.meta.url).href, {
   namedExports: {
     headshotConfig: {
-      provider: "wavespeed",
-      model: "openai/gpt-image-2/edit",
+      provider: "kie",
+      model: "gpt-image-2-image-to-image",
       resolution: undefined,
       aspectRatio: "1:1",
       batchSize: 4,
@@ -211,7 +211,7 @@ function reset(overrides: Partial<FakeImage> = {}) {
     id: BATCH_ID,
     userId: USER_ID,
     styleKey: "corporate",
-    model: "openai/gpt-image-2/edit",
+    model: "gpt-image-2-image-to-image",
     sourceImageUrl: "https://cdn.example.com/portrait.png",
   };
   freezeCalls = 0;

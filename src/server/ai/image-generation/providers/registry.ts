@@ -2,6 +2,7 @@ import { env } from "@/env";
 import type { ImageGenerationProviderId } from "../types";
 import type { ImageGenerationProviderAdapter } from "./types";
 import { WavespeedProvider } from "./wavespeed";
+import { KieProvider } from "./kie";
 
 class ImageGenerationProviderRegistry {
   private providers = new Map<
@@ -43,6 +44,10 @@ export function registerDefaultImageGenerationProviders(): void {
 
   if (env.WAVESPEED_API_KEY) {
     imageGenerationProviderRegistry.register(new WavespeedProvider());
+  }
+
+  if (env.KIE_API) {
+    imageGenerationProviderRegistry.register(new KieProvider());
   }
 }
 

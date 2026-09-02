@@ -92,11 +92,22 @@ export const env = createEnv({
       .regex(/^\d+$/)
       .optional()
       .transform((val) => (val ? parseInt(val, 10) : 30000)),
-    HEADSHOT_IMAGE_PROVIDER: z.string().optional().default("wavespeed"),
+    KIE_API: z.string().optional(),
+    KIE_BASE_URL: z
+      .string()
+      .url()
+      .optional()
+      .default("https://api.kie.ai"),
+    KIE_REQUEST_TIMEOUT_MS: z
+      .string()
+      .regex(/^\d+$/)
+      .optional()
+      .transform((val) => (val ? parseInt(val, 10) : 30000)),
+    HEADSHOT_IMAGE_PROVIDER: z.string().optional().default("kie"),
     HEADSHOT_IMAGE_MODEL: z
       .string()
       .optional()
-      .default("openai/gpt-image-2/edit"),
+      .default("gpt-image-2-image-to-image"),
     HEADSHOT_IMAGE_RESOLUTION: z.enum(["1k", "2k", "4k"]).optional(),
     HEADSHOT_IMAGE_ASPECT_RATIO: z.string().optional().default("1:1"),
     HEADSHOT_BATCH_SIZE: z
@@ -334,6 +345,9 @@ export const env = createEnv({
     WAVESPEED_API_KEY: process.env.WAVESPEED_API_KEY,
     WAVESPEED_BASE_URL: process.env.WAVESPEED_BASE_URL,
     WAVESPEED_REQUEST_TIMEOUT_MS: process.env.WAVESPEED_REQUEST_TIMEOUT_MS,
+    KIE_API: process.env.KIE_API,
+    KIE_BASE_URL: process.env.KIE_BASE_URL,
+    KIE_REQUEST_TIMEOUT_MS: process.env.KIE_REQUEST_TIMEOUT_MS,
     HEADSHOT_IMAGE_PROVIDER: process.env.HEADSHOT_IMAGE_PROVIDER,
     HEADSHOT_IMAGE_MODEL: process.env.HEADSHOT_IMAGE_MODEL,
     HEADSHOT_IMAGE_RESOLUTION: process.env.HEADSHOT_IMAGE_RESOLUTION,

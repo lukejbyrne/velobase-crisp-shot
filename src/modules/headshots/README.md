@@ -23,7 +23,7 @@ product:
   business_model: credits
   ai_capabilities: [image_generation]
   target_regions: [global]
-  third_party_services: [stripe, wavespeed, velobase_billing, resend, r2]
+  third_party_services: [stripe, kie, velobase_billing, resend, r2]
 
 domains:
   user: reuse_framework          # NextAuth + email verification, no custom roles
@@ -175,8 +175,9 @@ step and can be overridden with repository variables.
 | Variable | Default | Purpose |
 | --- | --- | --- |
 | `HEADSHOTS_MODE` | `auto` | `off` / `auto` / `on`. `auto` requires the `image-generation` module |
-| `HEADSHOT_IMAGE_PROVIDER` | `wavespeed` | Provider id passed to `@/server/ai/image-generation` |
-| `HEADSHOT_IMAGE_MODEL` | `openai/gpt-image-2/edit` | Provider model used for the portrait edit |
+| `KIE_API` | — | Kie.ai key. Enables `image-generation`, and therefore this module |
+| `HEADSHOT_IMAGE_PROVIDER` | `kie` | Provider id passed to `@/server/ai/image-generation` (`kie` or `wavespeed`) |
+| `HEADSHOT_IMAGE_MODEL` | `gpt-image-2-image-to-image` | Provider model used for the portrait edit |
 | `HEADSHOT_IMAGE_RESOLUTION` | unset | `1k` / `2k` / `4k` |
 | `HEADSHOT_IMAGE_ASPECT_RATIO` | `1:1` | Output aspect ratio |
 | `HEADSHOT_BATCH_SIZE` | `4` | Images per batch; each costs one credit |
@@ -185,6 +186,35 @@ step and can be overridden with repository variables.
 
 No provider secret is ever exposed to the browser: the client only ever sees the
 style catalogue and the numbers above.
+
+## Image provider
+
+Generation runs on [Kie.ai](https://kie.ai) by default, through the framework's
+image-generation service. Kie is a task API and maps directly onto the adapter
+the worker already drives:
+
+```text
+POST /api/v1/jobs/createTask   { model, input: { prompt, input_urls, aspect_ratio, resolution } }
+  -> { code: 200, data: { taskId } }
+
+GET  /api/v1/jobs/recordInfo?taskId=...
+  -> { data: { state: waiting|queuing|generating|success|fail,
+               resultJson: "{\"resultUrls\":[...]}", failCode, failMsg } }
+```
+
+The adapter lives at `src/server/ai/image-generation/providers/kie.ts`. Two
+details worth knowing: a Kie response can carry a non-200 `code` inside a 200
+HTTP response, and `resultJson` is a JSON string nested in the response that
+needs a second parse. Both are handled and covered by tests.
+
+CrispShot uses `gpt-image-2-image-to-image`, which takes the uploaded portrait
+in `input_urls`. WaveSpeed remains available as an alternative provider; set
+`HEADSHOT_IMAGE_PROVIDER=wavespeed` and supply `WAVESPEED_API_KEY` to use it.
+
+Kie exposes no pricing or model-listing endpoint, so `estimateCost` returns
+undefined and `listModels` returns empty. That only means the framework records
+no cost estimate on the task; billing the customer is unaffected, since credits
+are a flat one per image.
 
 ## Demonstrating the refund path
 

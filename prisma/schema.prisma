@@ -575,6 +575,7 @@ model ImageAsset {
 
 enum ImageGenerationProvider {
   WAVESPEED
+  KIE
 }
 
 enum ImageGenerationOperation {
