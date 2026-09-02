@@ -55,6 +55,22 @@ jobs:
             -H "X-API-Key: ${{ secrets.VELOBASE_API_KEY }}")
 
           DATA_PLANE_MODE=$(jq -r '.dataPlaneMode // "unknown"' <<< "$CONFIG")
+
+          # Velobase assigns the public URL; surface it here so the deployment
+          # target is visible in the run instead of only in the dashboard.
+          # Only field NAMES are printed, never values, since CONFIG carries a
+          # registry password.
+          echo "Velobase config fields: $(jq -r 'keys | join(", ")' <<< "$CONFIG")"
+          APP_URL=$(jq -r '.url // .appUrl // .projectUrl // .publicUrl // empty' <<< "$CONFIG")
+          SUBDOMAIN=$(jq -r '.subdomain // empty' <<< "$CONFIG")
+          if [ -z "$APP_URL" ] && [ -n "$SUBDOMAIN" ]; then
+            APP_URL="https://$SUBDOMAIN.velobase.app"
+          fi
+          if [ -n "$APP_URL" ]; then
+            echo "Velobase deployment URL: $APP_URL"
+          else
+            echo "::warning title=No deployment URL in Velobase config::The deploy config response did not include a url or subdomain field. Check the Velobase Cloud dashboard for this project's URL."
+          fi
           APP_BUDGET_CPU=$(jq -r '.appBudget.cpu // "970m"' <<< "$CONFIG")
           APP_BUDGET_MEMORY=$(jq -r '.appBudget.memory // "2355Mi"' <<< "$CONFIG")
 
@@ -103,6 +119,7 @@ jobs:
             echo "service_memory_request=$SERVICE_MEMORY_REQUEST"
             echo "service_cpu_limit=$SERVICE_CPU_LIMIT"
             echo "service_memory_limit=$SERVICE_MEMORY_LIMIT"
+            echo "app_url=$APP_URL"
           } >> "$GITHUB_OUTPUT"
 
       - name: Push per-service images
@@ -164,7 +181,27 @@ jobs:
               trigger_ref: $triggerRef
             }' > deploy-payload.json
 
-          curl --fail-with-body -X POST https://api.velobase.cloud/api/v1/deploy \
+          RESPONSE=$(curl --fail-with-body -sS -X POST https://api.velobase.cloud/api/v1/deploy \
             -H "X-API-Key: ${{ secrets.VELOBASE_API_KEY }}" \
             -H "Content-Type: application/json" \
-            --data-binary @deploy-payload.json
+            --data-binary @deploy-payload.json)
+
+          echo "$RESPONSE"
+
+          # The API only queues the rollout, so a green job does not mean the new
+          # revision is serving yet. Record where to look for both.
+          APP_URL="${{ steps.config.outputs.app_url }}"
+          {
+            echo "### Velobase deployment"
+            echo ""
+            echo "- Deployment id: \`$(jq -r '.id // "unknown"' <<< "$RESPONSE")\`"
+            echo "- Status at queue time: \`$(jq -r '.status // "unknown"' <<< "$RESPONSE")\`"
+            echo "- Image tag: \`$SHA\`"
+            if [ -n "$APP_URL" ]; then
+              echo "- URL: $APP_URL"
+            else
+              echo "- URL: not reported by the deploy config; check the Velobase Cloud dashboard"
+            fi
+            echo ""
+            echo "This step queues the rollout. Confirm the revision is live before treating the deploy as finished."
+          } >> "$GITHUB_STEP_SUMMARY"

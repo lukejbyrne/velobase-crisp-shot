@@ -1,2 +1,8 @@
+# This repository is a single package, not a monorepo. The empty list is still
+# required: pnpm 10.12.1 (the version pinned in package.json) refuses to install
+# when pnpm-workspace.yaml exists without a `packages` field, and this file has
+# to exist to carry the settings below.
+packages: []
+
 onlyBuiltDependencies:
   - sharp
