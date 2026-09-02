@@ -26,7 +26,11 @@ COPY --chown=worker:nodejs src/lib ./src/lib
 COPY --chown=worker:nodejs src/server ./src/server
 COPY --chown=worker:nodejs src/analytics ./src/analytics
 COPY --chown=worker:nodejs src/config ./src/config
+# Product modules contribute queues and processors, so the worker needs them too.
+COPY --chown=worker:nodejs src/modules ./src/modules
+# env.js imports env-normalization.js at load time; without it the worker cannot boot.
 COPY --chown=worker:nodejs src/env.js ./src/env.js
+COPY --chown=worker:nodejs src/env-normalization.js ./src/env-normalization.js
 COPY --chown=worker:nodejs tsconfig.json ./
 COPY --chown=worker:nodejs public/data/disposable-domains.txt ./public/data/disposable-domains.txt
 
