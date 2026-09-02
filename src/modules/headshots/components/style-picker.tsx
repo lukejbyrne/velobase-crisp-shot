@@ -8,6 +8,7 @@ export interface StyleOption {
   key: string;
   labelKey: string;
   accentClassName: string;
+  sampleImage: string;
 }
 
 export function StylePicker({
@@ -51,10 +52,18 @@ export function StylePicker({
             <span
               aria-hidden="true"
               className={cn(
-                "mb-2 block h-14 w-full rounded-lg bg-gradient-to-br",
+                "mb-2 block aspect-square w-full overflow-hidden rounded-lg bg-gradient-to-br",
                 style.accentClassName,
               )}
-            />
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={style.sampleImage}
+                alt=""
+                loading="lazy"
+                className="h-full w-full object-cover"
+              />
+            </span>
             <span className="block text-sm font-medium">
               {t(style.labelKey)}
             </span>

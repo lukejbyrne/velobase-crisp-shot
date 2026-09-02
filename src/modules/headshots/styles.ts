@@ -13,8 +13,10 @@ export interface HeadshotStyle {
   labelKey: string;
   /** Instruction appended to the shared base prompt. */
   prompt: string;
-  /** Accent used by the style picker, expressed as Tailwind classes. */
+  /** Accent used behind a sample image while it loads. */
   accentClassName: string;
+  /** Real sample rendered by this style, served from /public/landing. */
+  sampleImage: string;
 }
 
 /**
@@ -39,6 +41,7 @@ export const HEADSHOT_NEGATIVE_PROMPT = [
 export const HEADSHOT_STYLES: readonly HeadshotStyle[] = [
   {
     key: "corporate",
+    sampleImage: "/landing/corporate.jpg",
     labelKey: "corporate",
     prompt:
       "Corporate studio portrait. Charcoal suit jacket over a crisp white shirt, neutral " +
@@ -48,6 +51,7 @@ export const HEADSHOT_STYLES: readonly HeadshotStyle[] = [
   },
   {
     key: "startup-founder",
+    sampleImage: "/landing/startup-founder.jpg",
     labelKey: "startupFounder",
     prompt:
       "Modern founder portrait. Plain dark crew-neck or knit over relaxed shoulders, " +
@@ -57,6 +61,7 @@ export const HEADSHOT_STYLES: readonly HeadshotStyle[] = [
   },
   {
     key: "linkedin-classic",
+    sampleImage: "/landing/linkedin-classic.jpg",
     labelKey: "linkedinClassic",
     prompt:
       "Classic LinkedIn profile photo. Navy blazer over a light open-collar shirt, " +
@@ -66,6 +71,7 @@ export const HEADSHOT_STYLES: readonly HeadshotStyle[] = [
   },
   {
     key: "creative",
+    sampleImage: "/landing/creative.jpg",
     labelKey: "creative",
     prompt:
       "Editorial creative portrait. Textured dark top, deep muted teal backdrop, " +
@@ -75,6 +81,7 @@ export const HEADSHOT_STYLES: readonly HeadshotStyle[] = [
   },
   {
     key: "outdoor-natural",
+    sampleImage: "/landing/outdoor-natural.jpg",
     labelKey: "outdoorNatural",
     prompt:
       "Natural light outdoor portrait. Smart casual shirt or light jacket, " +
@@ -84,6 +91,7 @@ export const HEADSHOT_STYLES: readonly HeadshotStyle[] = [
   },
   {
     key: "monochrome",
+    sampleImage: "/landing/monochrome.jpg",
     labelKey: "monochrome",
     prompt:
       "Timeless black and white portrait. Simple dark clothing, plain dark backdrop, " +

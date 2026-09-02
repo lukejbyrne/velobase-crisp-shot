@@ -141,17 +141,25 @@ export default function HomePage() {
 
         <div className="mt-10 grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-6">
           {HEADSHOT_STYLES.map((style) => (
-            <div key={style.key} className="text-center">
+            <figure key={style.key} className="text-center">
               <div
                 className={cn(
-                  "aspect-[4/5] w-full rounded-xl bg-gradient-to-br",
+                  "aspect-square w-full overflow-hidden rounded-xl bg-gradient-to-br",
                   style.accentClassName,
                 )}
-              />
-              <p className="mt-2 text-sm font-medium">
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={style.sampleImage}
+                  alt={tStyles(style.labelKey)}
+                  loading="lazy"
+                  className="h-full w-full object-cover"
+                />
+              </div>
+              <figcaption className="mt-2 text-sm font-medium">
                 {tStyles(style.labelKey)}
-              </p>
-            </div>
+              </figcaption>
+            </figure>
           ))}
         </div>
       </section>

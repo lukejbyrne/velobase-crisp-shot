@@ -3,14 +3,15 @@
 import { useCallback, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
-import { PortraitIllustration } from "./portrait-illustration";
 
 /**
  * Draggable before/after comparison.
  *
- * The reveal is a `clip-path` over a full-size layer rather than a width
- * animation, so the clipped image wipes across instead of squashing. The
- * divider is backed by a range input so it stays keyboard operable.
+ * Both frames are real: the left is an unedited phone photo, the right is what
+ * the product produced from it through the same pipeline a customer uses. The
+ * reveal is a `clip-path` over a full-size layer rather than a width animation,
+ * so the clipped image wipes across instead of squashing, and the divider is
+ * backed by a range input so it stays keyboard operable.
  */
 export function BeforeAfterShowcase({ className }: { className?: string }) {
   const t = useTranslations("landing.beforeAfter");
@@ -29,7 +30,7 @@ export function BeforeAfterShowcase({ className }: { className?: string }) {
     <div className={cn("w-full", className)}>
       <div
         ref={frameRef}
-        className="border-border bg-muted relative aspect-[4/5] w-full touch-none overflow-hidden rounded-2xl border shadow-2xl select-none"
+        className="border-border bg-muted relative aspect-square w-full touch-none overflow-hidden rounded-2xl border shadow-2xl select-none"
         onPointerDown={(event) => {
           event.currentTarget.setPointerCapture(event.pointerId);
           setFromClientX(event.clientX);
@@ -38,15 +39,25 @@ export function BeforeAfterShowcase({ className }: { className?: string }) {
           if (event.buttons === 1) setFromClientX(event.clientX);
         }}
       >
-        <div className="absolute inset-0">
-          <PortraitIllustration variant="after" />
-        </div>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/landing/corporate.jpg"
+          alt={t("afterCaption")}
+          className="absolute inset-0 h-full w-full object-cover"
+          draggable={false}
+        />
 
         <div
           className="absolute inset-0"
           style={{ clipPath: `inset(0 ${100 - position}% 0 0)` }}
         >
-          <PortraitIllustration variant="before" />
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/landing/source-original.jpg"
+            alt={t("beforeCaption")}
+            className="absolute inset-0 h-full w-full object-cover"
+            draggable={false}
+          />
         </div>
 
         <div

@@ -67,6 +67,7 @@ export function listStyles() {
     key: style.key,
     labelKey: style.labelKey,
     accentClassName: style.accentClassName,
+    sampleImage: style.sampleImage,
   }));
 }
 
