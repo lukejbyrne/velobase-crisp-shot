@@ -91,6 +91,29 @@ export function getEmailSuggestions(email: string): string[] {
 }
 
 // ============ Main Hook ============
+/**
+ * Turns a sign-in failure code into something a person can act on.
+ *
+ * The default deliberately blames the code rather than the service: by the time
+ * this runs the code has already been sent, so an expired or mistyped code is
+ * far more likely than an outage, and "something went wrong" sends people
+ * hunting for a problem that is not there.
+ */
+function describeCodeError(code?: string): string {
+  switch (code) {
+    case "expired":
+      return "That code has expired. Request a new one.";
+    case "too_many_attempts":
+      return "Too many incorrect attempts. Request a new code.";
+    case "blocked":
+      return "This account cannot sign in. Contact support if that seems wrong.";
+    case "signup_disabled":
+      return "New sign-ups are currently disabled.";
+    default:
+      return "That code is not valid. Check the newest email, or request a new code.";
+  }
+}
+
 export function useLogin() {
   const { loginModalOpen, callbackUrl, loginModalSource, setLoginModalOpen } =
     useAuthStore();
@@ -405,15 +428,19 @@ export function useLogin() {
 
       if (result?.error) {
         track(AUTH_EVENTS.LOGIN_FAILED, { method: "email", reason: "unknown" });
-        setError("Invalid or expired verification code");
+        setError(describeCodeError(result.code));
         return;
       }
 
       const targetUrl = result?.url ?? getCallbackUrl();
       window.location.assign(targetUrl);
-    } catch {
+    } catch (error) {
+      // A rejected sign-in still means the code did not work, so say that
+      // rather than implying the service is broken.
       track(AUTH_EVENTS.LOGIN_FAILED, { method: "email", reason: "unknown" });
-      setError("Something went wrong. Please try again.");
+      setError(
+        describeCodeError((error as { code?: string } | undefined)?.code),
+      );
     } finally {
       setIsLoading(false);
     }

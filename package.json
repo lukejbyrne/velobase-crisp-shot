@@ -10,7 +10,7 @@
     "test:env": "pnpm test:env:auth && pnpm test:env:drift",
     "test:env:auth": "node --test src/env-normalization.test.mjs",
     "test:env:drift": "node --test scripts/check-env.test.mjs",
-    "test:unit": "node --import tsx --experimental-test-module-mocks --test \"src/modules/**/*.test.ts\" \"src/server/ai/**/*.test.ts\"",
+    "test:unit": "node --env-file-if-exists=.env --import tsx --experimental-test-module-mocks --test \"src/modules/**/*.test.ts\" \"src/server/**/*.test.ts\"",
     "docker:up": "docker compose --profile stripe up -d",
     "docker:down": "docker compose --profile stripe down --remove-orphans",
     "docker:db:up": "docker compose up -d postgres redis",

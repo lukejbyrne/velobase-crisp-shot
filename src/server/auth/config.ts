@@ -1,4 +1,8 @@
-import { type DefaultSession, type NextAuthConfig } from "next-auth";
+import {
+  CredentialsSignin,
+  type DefaultSession,
+  type NextAuthConfig,
+} from "next-auth";
 import Nodemailer from "next-auth/providers/nodemailer";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { oauthProviders, isOAuthProvider } from "./providers";
@@ -97,6 +101,21 @@ declare module "next-auth" {
  *
  * @see https://next-auth.js.org/configuration/options
  */
+/**
+ * Sign-in failure that Auth.js can represent.
+ *
+ * Throwing a plain Error from `authorize` makes Auth.js v5 respond with
+ * `error=Configuration` — indistinguishable from a broken deployment — and the
+ * client falls into its generic catch. Extending CredentialsSignin keeps the
+ * failure describable, so an expired code reads as an expired code.
+ */
+class EmailCodeSignInError extends CredentialsSignin {
+  constructor(code: string) {
+    super(code);
+    this.code = code;
+  }
+}
+
 export const authConfig = {
   // Required when running behind a reverse proxy (K8s Ingress / Nginx).
   // Tells Auth.js to trust the X-Forwarded-Host header so the session
@@ -201,7 +220,7 @@ export const authConfig = {
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.code) {
-          throw new Error("Invalid verification code");
+          throw new EmailCodeSignInError("invalid_code");
         }
 
         const email = (credentials.email as string).toLowerCase().trim();
@@ -213,7 +232,7 @@ export const authConfig = {
             { reason: consumeResult.reason },
             "Email code login failed",
           );
-          throw new Error("Invalid or expired verification code");
+          throw new EmailCodeSignInError(consumeResult.reason);
         }
 
         const canonicalEmail = normalizeEmail(email);
@@ -238,7 +257,7 @@ export const authConfig = {
 
         if (!user) {
           if (SIGNUP_DISABLED) {
-            throw new Error("SIGNUP_DISABLED");
+            throw new EmailCodeSignInError("signup_disabled");
           }
 
           user = await db.user.create({
@@ -281,7 +300,7 @@ export const authConfig = {
         }
 
         if (user.isBlocked) {
-          throw new Error("Invalid or expired verification code");
+          throw new EmailCodeSignInError("blocked");
         }
 
         logger.info({ email, userId: user.id }, "Email code login successful");
@@ -401,7 +420,7 @@ export const authConfig = {
   // - 生产 Full SSL / 直连 HTTPS: secure=true
   // 通过 COOKIE_SECURE env var 覆盖，或自动推断（非生产 = false）
   cookies: (() => {
-    const secure = env.COOKIE_SECURE ?? (env.NODE_ENV === "production");
+    const secure = env.COOKIE_SECURE ?? env.NODE_ENV === "production";
     return {
       sessionToken: {
         name: `next-auth.session-token`,
