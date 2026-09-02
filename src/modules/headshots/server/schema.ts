@@ -17,7 +17,17 @@ const storageKeySchema = z
   });
 
 export const createBatchInputSchema = z.object({
-  styleKey: z.enum(HEADSHOT_STYLE_KEYS),
+  /**
+   * One to four styles. Fewer than the batch size is fine — picks cycle to
+   * fill every image, so one style still produces a full batch.
+   */
+  styleKeys: z
+    .array(z.enum(HEADSHOT_STYLE_KEYS))
+    .min(1)
+    .max(4)
+    .refine((keys) => new Set(keys).size === keys.length, {
+      message: "Styles must be distinct",
+    }),
   sourceStorageKey: storageKeySchema,
   sourceImageUrl: z.string().url().max(2048),
   /**

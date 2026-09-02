@@ -135,7 +135,7 @@ export async function processHeadshotGenerationJob(
       provider: headshotConfig.provider,
       model: image.batch.model,
       operation: "edit-image",
-      prompt: buildHeadshotPrompt(image.batch.styleKey, image.position),
+      prompt: buildHeadshotPrompt(image.styleKey, image.position),
       negativePrompt: HEADSHOT_NEGATIVE_PROMPT,
       aspectRatio: headshotConfig.aspectRatio,
       resolution: headshotConfig.resolution,
@@ -148,7 +148,7 @@ export async function processHeadshotGenerationJob(
         module: "headshots",
         batchId: image.batchId,
         headshotImageId: image.id,
-        styleKey: image.batch.styleKey,
+        styleKey: image.styleKey,
       },
     });
 
@@ -208,7 +208,7 @@ export async function processHeadshotGenerationJob(
       headshotImageId: image.id,
       batchId: image.batchId,
       userId: image.userId,
-      styleKey: image.batch.styleKey,
+      styleKey: image.styleKey,
     });
 
     logger.info(
@@ -240,7 +240,7 @@ export async function processHeadshotGenerationJob(
       headshotImageId: image.id,
       batchId: image.batchId,
       userId: image.userId,
-      styleKey: image.batch.styleKey,
+      styleKey: image.styleKey,
       errorMessage: message,
     });
 

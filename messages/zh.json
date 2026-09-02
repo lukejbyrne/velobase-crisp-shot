@@ -1166,7 +1166,9 @@
     },
     "style": {
       "title": "选择风格",
-      "subtitle": "每次任务会生成所选风格的四张变体。"
+      "subtitle": "每次任务会生成所选风格的四张变体。",
+      "subtitleMulti": "最多可选 {max} 种。每次任务生成四张图片，在所选风格之间平均分配。",
+      "split": "已选 {count} 种风格 — 每种约 {each} 张。"
     },
     "generate": {
       "title": "生成",

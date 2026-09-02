@@ -30,7 +30,7 @@ export function StudioView() {
   const tBatch = useTranslations("headshots.batch");
 
   const [portrait, setPortrait] = useState<UploadedPortrait | null>(null);
-  const [styleKey, setStyleKey] = useState<string | null>(null);
+  const [styleKeys, setStyleKeys] = useState<string[]>([]);
   const [forceFailure, setForceFailure] = useState(false);
   const [activeBatchId, setActiveBatchId] = useState<string | null>(null);
 
@@ -76,7 +76,8 @@ export function StudioView() {
   const available = credits.data?.available ?? 0;
   const canAfford = available >= config.creditsPerBatch;
   const isBusy = createBatch.isPending;
-  const canSubmit = Boolean(portrait && styleKey) && canAfford && !isBusy;
+  const canSubmit =
+    Boolean(portrait) && styleKeys.length > 0 && canAfford && !isBusy;
 
   return (
     <div className="space-y-10">
@@ -111,14 +112,23 @@ export function StudioView() {
               title={tStyle("title")}
             />
             <p className="text-muted-foreground text-sm">
-              {tStyle("subtitle")}
+              {tStyle("subtitleMulti", { max: config.batchSize })}
             </p>
             <StylePicker
               styles={config.styles}
-              value={styleKey}
-              onChange={setStyleKey}
+              value={styleKeys}
+              onChange={setStyleKeys}
+              max={config.batchSize}
               disabled={isBusy}
             />
+            {styleKeys.length > 0 && (
+              <p className="text-muted-foreground text-xs">
+                {tStyle("split", {
+                  count: styleKeys.length,
+                  each: Math.floor(config.batchSize / styleKeys.length),
+                })}
+              </p>
+            )}
           </section>
 
           <section className="border-border bg-card space-y-4 rounded-2xl border p-5">
@@ -189,12 +199,12 @@ export function StudioView() {
                     toast.error(tGenerate("needPhoto"));
                     return;
                   }
-                  if (!styleKey) {
+                  if (styleKeys.length === 0) {
                     toast.error(tGenerate("needStyle"));
                     return;
                   }
                   createBatch.mutate({
-                    styleKey,
+                    styleKeys,
                     sourceStorageKey: portrait.storageKey,
                     sourceImageUrl: portrait.publicUrl,
                     devForceFailure: forceFailure,

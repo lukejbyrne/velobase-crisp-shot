@@ -15,12 +15,16 @@ export function StylePicker({
   styles,
   value,
   onChange,
+  max,
   disabled,
   className,
 }: {
   styles: StyleOption[];
-  value: string | null;
-  onChange: (key: string) => void;
+  /** Chosen styles, in pick order. */
+  value: string[];
+  onChange: (keys: string[]) => void;
+  /** Most styles that can be chosen at once. */
+  max: number;
   disabled?: boolean;
   className?: string;
 }) {
@@ -28,25 +32,35 @@ export function StylePicker({
 
   return (
     <div
-      role="radiogroup"
+      role="group"
       className={cn("grid grid-cols-2 gap-3 sm:grid-cols-3", className)}
     >
       {styles.map((style) => {
-        const isSelected = value === style.key;
+        const order = value.indexOf(style.key);
+        const isSelected = order !== -1;
+        // Once the cap is reached, unpicked styles are disabled rather than
+        // silently ignored, so the limit is visible before it is hit.
+        const atCapacity = !isSelected && value.length >= max;
         return (
           <button
             key={style.key}
             type="button"
-            role="radio"
+            role="checkbox"
             aria-checked={isSelected}
-            disabled={disabled}
-            onClick={() => onChange(style.key)}
+            disabled={disabled || atCapacity}
+            onClick={() =>
+              onChange(
+                isSelected
+                  ? value.filter((key) => key !== style.key)
+                  : [...value, style.key],
+              )
+            }
             className={cn(
               "group relative overflow-hidden rounded-xl border p-3 text-left transition-all",
               isSelected
                 ? "border-primary ring-primary/30 ring-2"
                 : "border-border hover:border-primary/50",
-              disabled && "cursor-not-allowed opacity-60",
+              (disabled || atCapacity) && "cursor-not-allowed opacity-40",
             )}
           >
             <span
@@ -68,8 +82,13 @@ export function StylePicker({
               {t(style.labelKey)}
             </span>
             {isSelected && (
-              <span className="bg-primary text-primary-foreground absolute top-2 right-2 flex h-5 w-5 items-center justify-center rounded-full">
-                <Check className="h-3 w-3" />
+              <span
+                className="bg-primary text-primary-foreground absolute top-2 right-2 flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-semibold"
+                // The number is the pick order, which is also the order the
+                // styles are dealt across the batch's images.
+                title={`Pick ${order + 1}`}
+              >
+                {value.length > 1 ? order + 1 : <Check className="h-3 w-3" />}
               </span>
             )}
           </button>

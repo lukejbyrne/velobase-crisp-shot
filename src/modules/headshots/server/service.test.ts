@@ -29,6 +29,7 @@ interface FakeImage {
   id: string;
   batchId: string;
   userId: string;
+  styleKey: string;
   position: number;
   status: string;
   creditState: string;
@@ -44,7 +45,7 @@ interface FakeImage {
 interface FakeBatch {
   id: string;
   userId: string;
-  styleKey: string;
+  styleKeys: string[];
   status: string;
   sourceImageUrl: string;
   sourceStorageKey: string;
@@ -110,7 +111,7 @@ mockModule(new URL("../../../server/db.ts", import.meta.url).href, {
           const batch: FakeBatch = {
             id: nextId("batch"),
             userId: data.userId as string,
-            styleKey: data.styleKey as string,
+            styleKeys: data.styleKeys as string[],
             status: data.status as string,
             sourceImageUrl: data.sourceImageUrl as string,
             sourceStorageKey: data.sourceStorageKey as string,
@@ -133,6 +134,7 @@ mockModule(new URL("../../../server/db.ts", import.meta.url).href, {
               id: nextId("image"),
               batchId: batch.id,
               userId: row.userId as string,
+              styleKey: row.styleKey as string,
               position: row.position as number,
               status: row.status as string,
               creditState: row.creditState as string,
@@ -192,10 +194,7 @@ mockModule(new URL("../../../server/db.ts", import.meta.url).href, {
               item.userId === where.userId &&
               (!where.status || item.status === where.status),
           );
-          if (!image) return null;
-          // Mirrors the `include: { batch: ... }` the service asks for.
-          const batch = batches.find((item) => item.id === image.batchId);
-          return { ...image, batch: { styleKey: batch?.styleKey ?? "" } };
+          return image ?? null;
         },
         findMany: async () => [],
         update: async ({
@@ -311,7 +310,7 @@ function reset() {
 
 const VALID_INPUT = {
   userId: USER_ID,
-  styleKey: "corporate",
+  styleKeys: ["corporate"],
   sourceStorageKey: `${USER_ID}/headshot-sources/abc.png`,
   sourceImageUrl: "https://cdn.example.com/portrait.png",
 };
@@ -386,7 +385,7 @@ void test("createBatch rejects an unknown style before touching billing", async 
   reset();
 
   await assert.rejects(
-    createBatch({ ...VALID_INPUT, styleKey: "not-a-style" }),
+    createBatch({ ...VALID_INPUT, styleKeys: ["not-a-style"] }),
     (error: unknown) => {
       assert.equal((error as { code?: unknown }).code, "BAD_REQUEST");
       return true;
@@ -535,5 +534,54 @@ void test("getDownloadUrl signs only the caller's own completed image", async ()
       assert.equal((error as { code?: unknown }).code, "NOT_FOUND");
       return true;
     },
+  );
+});
+
+void test("four picks give four different styles, one per image", async () => {
+  reset();
+  const batch = await createBatch({
+    ...VALID_INPUT,
+    styleKeys: ["corporate", "monochrome", "creative", "outdoor-natural"],
+  });
+  assert.deepEqual(
+    batch.images.map((i) => i.styleKey),
+    ["corporate", "monochrome", "creative", "outdoor-natural"],
+  );
+});
+
+void test("two picks are split evenly across the batch", async () => {
+  reset();
+  const batch = await createBatch({
+    ...VALID_INPUT,
+    styleKeys: ["corporate", "monochrome"],
+  });
+  assert.deepEqual(
+    batch.images.map((i) => i.styleKey),
+    ["corporate", "monochrome", "corporate", "monochrome"],
+  );
+});
+
+void test("three picks give the first pick the spare image", async () => {
+  reset();
+  const batch = await createBatch({
+    ...VALID_INPUT,
+    styleKeys: ["corporate", "monochrome", "creative"],
+  });
+  // Cycling rather than blocking means no style is dropped on an uneven split.
+  assert.deepEqual(
+    batch.images.map((i) => i.styleKey),
+    ["corporate", "monochrome", "creative", "corporate"],
+  );
+});
+
+void test("one pick still fills the whole batch", async () => {
+  reset();
+  const batch = await createBatch({
+    ...VALID_INPUT,
+    styleKeys: ["monochrome"],
+  });
+  assert.deepEqual(
+    batch.images.map((i) => i.styleKey),
+    ["monochrome", "monochrome", "monochrome", "monochrome"],
   );
 });

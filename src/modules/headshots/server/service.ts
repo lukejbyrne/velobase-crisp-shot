@@ -24,7 +24,11 @@ import {
   isForcedFailureAllowed,
   isOwnedStorageKey,
 } from "./config";
-import { HEADSHOT_STYLES, getHeadshotStyle } from "../styles";
+import {
+  assignStylesToSlots,
+  getHeadshotStyle,
+  HEADSHOT_STYLES,
+} from "../styles";
 
 const logger = createLogger("headshots-service");
 
@@ -35,7 +39,7 @@ const DEFAULT_PAGE_SIZE = 20;
 
 export interface CreateBatchParams {
   userId: string;
-  styleKey: string;
+  styleKeys: string[];
   sourceStorageKey: string;
   sourceImageUrl: string;
   devForceFailure?: boolean;
@@ -101,11 +105,11 @@ export async function getCredits(
 export async function createBatch(params: CreateBatchParams) {
   assertHeadshotsEnabled();
 
-  const style = getHeadshotStyle(params.styleKey);
-  if (!style) {
+  const unknown = params.styleKeys.find((key) => !getHeadshotStyle(key));
+  if (unknown) {
     throw new TRPCError({
       code: "BAD_REQUEST",
-      message: `Unknown headshot style: ${params.styleKey}`,
+      message: `Unknown headshot style: ${unknown}`,
     });
   }
 
@@ -146,10 +150,13 @@ export async function createBatch(params: CreateBatchParams) {
   const forceFailure =
     Boolean(params.devForceFailure) && isForcedFailureAllowed();
 
+  // Picks cycle across the batch's image slots.
+  const slotStyles = assignStylesToSlots(params.styleKeys, batchSize);
+
   const batch = await db.headshotBatch.create({
     data: {
       userId: params.userId,
-      styleKey: params.styleKey,
+      styleKeys: params.styleKeys,
       sourceImageUrl: params.sourceImageUrl,
       sourceStorageKey: params.sourceStorageKey,
       status: "QUEUED",
@@ -158,8 +165,9 @@ export async function createBatch(params: CreateBatchParams) {
       provider: headshotConfig.provider,
       model: headshotConfig.model,
       images: {
-        create: Array.from({ length: batchSize }, (_, position) => ({
+        create: slotStyles.map((styleKey, position) => ({
           userId: params.userId,
+          styleKey,
           position,
           status: "QUEUED" as const,
           creditState: "NONE" as const,
@@ -225,7 +233,7 @@ export async function createBatch(params: CreateBatchParams) {
   await appEvents.emit("headshot_batch:created", {
     batchId: batch.id,
     userId: params.userId,
-    styleKey: params.styleKey,
+    styleKeys: params.styleKeys,
     requestedCount: batchSize,
   });
 
@@ -233,7 +241,7 @@ export async function createBatch(params: CreateBatchParams) {
     {
       batchId: batch.id,
       userId: params.userId,
-      styleKey: params.styleKey,
+      styleKeys: params.styleKeys,
       requestedCount: batchSize,
       forceFailure,
     },
@@ -333,7 +341,7 @@ export async function listImages(params: ListParams & { batchId?: string }) {
     take: limit + 1,
     cursor: params.cursor ? { id: params.cursor } : undefined,
     skip: params.cursor ? 1 : 0,
-    include: { batch: { select: { styleKey: true, createdAt: true } } },
+    include: { batch: { select: { createdAt: true } } },
   });
 
   let nextCursor: string | null = null;
@@ -347,7 +355,7 @@ export async function listImages(params: ListParams & { batchId?: string }) {
       batchId: image.batchId,
       position: image.position,
       imageUrl: image.imageUrl,
-      styleKey: image.batch.styleKey,
+      styleKey: image.styleKey,
       createdAt: image.createdAt,
     })),
     nextCursor,
@@ -366,7 +374,6 @@ export async function getDownloadUrl(params: {
 }): Promise<{ url: string; filename: string }> {
   const image = await db.headshotImage.findFirst({
     where: { id: params.imageId, userId: params.userId, status: "COMPLETED" },
-    include: { batch: { select: { styleKey: true } } },
   });
 
   if (!image?.storageKey) {
@@ -378,7 +385,7 @@ export async function getDownloadUrl(params: {
 
   return {
     url,
-    filename: `crispshot-${image.batch.styleKey}-${image.position + 1}.${extension}`,
+    filename: `crispshot-${image.styleKey}-${image.position + 1}.${extension}`,
   };
 }
 
@@ -553,7 +560,7 @@ export async function recomputeBatchStatus(batchId: string): Promise<void> {
     await appEvents.emit("headshot_batch:completed", {
       batchId: batch.id,
       userId: batch.userId,
-      styleKey: batch.styleKey,
+      styleKeys: batch.styleKeys,
       completedCount: completed,
       failedCount: failed,
     });
@@ -570,7 +577,7 @@ function toBatchView(batch: BatchWithImages) {
   const images = [...batch.images].sort((a, b) => a.position - b.position);
   return {
     id: batch.id,
-    styleKey: batch.styleKey,
+    styleKeys: batch.styleKeys,
     status: batch.status,
     sourceImageUrl: batch.sourceImageUrl,
     requestedCount: batch.requestedCount,
@@ -585,6 +592,7 @@ function toBatchView(batch: BatchWithImages) {
     images: images.map((image) => ({
       id: image.id,
       position: image.position,
+      styleKey: image.styleKey,
       status: image.status,
       creditState: image.creditState,
       creditAmount: image.creditAmount,

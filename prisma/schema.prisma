@@ -1588,7 +1588,10 @@ enum HeadshotCreditState {
 model HeadshotBatch {
   id               String              @id @default(cuid())
   userId           String              @map("user_id")
-  styleKey         String              @map("style_key")
+  /// Styles chosen for this batch, in pick order. One image per requested
+  /// slot is assigned round-robin, so four picks give four different looks
+  /// and one pick gives four takes on the same look.
+  styleKeys        String[]            @map("style_keys")
   sourceImageUrl   String              @map("source_image_url")
   sourceStorageKey String              @map("source_storage_key")
   status           HeadshotBatchStatus @default(QUEUED)
@@ -1619,6 +1622,8 @@ model HeadshotImage {
   id                    String              @id @default(cuid())
   batchId               String              @map("batch_id")
   userId                String              @map("user_id")
+  /// The style this specific image was rendered in.
+  styleKey              String              @map("style_key")
   position              Int
   status                HeadshotImageStatus @default(QUEUED)
   creditState           HeadshotCreditState @default(NONE) @map("credit_state")

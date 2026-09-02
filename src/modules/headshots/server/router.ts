@@ -38,7 +38,7 @@ export const headshotsRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       return createBatch({
         userId: ctx.session.user.id,
-        styleKey: input.styleKey,
+        styleKeys: input.styleKeys,
         sourceStorageKey: input.sourceStorageKey,
         sourceImageUrl: input.sourceImageUrl,
         devForceFailure: input.devForceFailure,

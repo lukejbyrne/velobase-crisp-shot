@@ -41,7 +41,11 @@ export function BatchProgress({ batch }: { batch: Batch }) {
         <div>
           <h2 className="text-lg font-semibold">{t("title")}</h2>
           <p className="text-muted-foreground text-sm">
-            {t("styleLabel")}: {tStyles(styleLabelKey(batch.styleKey))} ·{" "}
+            {t("styleLabel")}:{" "}
+            {batch.styleKeys
+              .map((key) => tStyles(styleLabelKey(key)))
+              .join(", ")}{" "}
+            ·{" "}
             {t("progress", {
               completed: settled,
               total: batch.requestedCount,
@@ -77,6 +81,7 @@ export function BatchProgress({ batch }: { batch: Batch }) {
 
 function ImageTile({ image }: { image: BatchImage }) {
   const t = useTranslations("headshots.batch");
+  const tStyles = useTranslations("headshots.styles");
   const tStatus = useTranslations("headshots.status");
   const tCredit = useTranslations("headshots.creditState");
   const tGallery = useTranslations("headshots.gallery");
@@ -119,7 +124,11 @@ function ImageTile({ image }: { image: BatchImage }) {
         )}
       </div>
 
-      <div className="border-border flex items-center justify-between gap-2 border-t px-3 py-2">
+      <p className="border-border text-muted-foreground border-t px-3 pt-2 text-[11px] font-medium">
+        {tStyles(styleLabelKey(image.styleKey))}
+      </p>
+
+      <div className="flex items-center justify-between gap-2 px-3 pt-1 pb-2">
         <span
           className={cn(
             "inline-flex items-center gap-1 text-[11px] font-medium",

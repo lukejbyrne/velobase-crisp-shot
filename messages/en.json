@@ -1166,7 +1166,9 @@
     },
     "style": {
       "title": "Choose a style",
-      "subtitle": "Each batch renders four variations of the style you pick."
+      "subtitle": "Each batch renders four variations of the style you pick.",
+      "subtitleMulti": "Pick up to {max}. Each batch is four images, shared evenly between the styles you choose.",
+      "split": "{count} styles selected — about {each} image(s) each."
     },
     "generate": {
       "title": "Generate",

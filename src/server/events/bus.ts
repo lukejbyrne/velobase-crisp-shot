@@ -70,13 +70,13 @@ export type EventPayload = {
   "headshot_batch:created": {
     batchId: string;
     userId: string;
-    styleKey: string;
+    styleKeys: string[];
     requestedCount: number;
   };
   "headshot_batch:completed": {
     batchId: string;
     userId: string;
-    styleKey: string;
+    styleKeys: string[];
     completedCount: number;
     failedCount: number;
   };

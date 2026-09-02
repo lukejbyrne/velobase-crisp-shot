@@ -151,3 +151,22 @@ export function buildHeadshotPrompt(
 export function styleLabelKey(styleKey: string): string {
   return getHeadshotStyle(styleKey)?.labelKey ?? HEADSHOT_STYLES[0]!.labelKey;
 }
+
+/**
+ * Assigns a style to each image slot in a batch.
+ *
+ * Picks cycle round-robin, so four picks give four different looks and one
+ * pick gives four takes on the same one. Cycling rather than blocking keeps
+ * an uneven split even — three picks over four slots gives the first pick the
+ * extra image rather than dropping a style.
+ */
+export function assignStylesToSlots(
+  styleKeys: string[],
+  slots: number,
+): string[] {
+  if (styleKeys.length === 0) throw new Error("At least one style is required");
+  return Array.from(
+    { length: slots },
+    (_, index) => styleKeys[index % styleKeys.length]!,
+  );
+}

@@ -19,6 +19,7 @@ interface FakeImage {
   id: string;
   batchId: string;
   userId: string;
+  styleKey: string;
   position: number;
   status: string;
   creditState: string;
@@ -206,6 +207,7 @@ function reset(overrides: Partial<FakeImage> = {}) {
     id: IMAGE_ID,
     batchId: BATCH_ID,
     userId: USER_ID,
+    styleKey: "corporate",
     position: 0,
     status: "QUEUED",
     creditState: "FROZEN",
@@ -219,7 +221,7 @@ function reset(overrides: Partial<FakeImage> = {}) {
   batchRow = {
     id: BATCH_ID,
     userId: USER_ID,
-    styleKey: "corporate",
+    styleKeys: ["corporate"],
     model: "gpt-image-2-image-to-image",
     sourceImageUrl: "https://cdn.example.com/portrait.png",
   };
