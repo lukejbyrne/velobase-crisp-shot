@@ -1,6 +1,6 @@
 /**
  * Billing schemas - centralized exports
- * 
+ *
  * Each API has its own schema file with input/output definitions.
  * This index file re-exports everything for convenience.
  */
@@ -28,4 +28,3 @@ export * from "./get-records";
 
 // Post-consume API (after-the-fact consumption without prior freeze)
 export * from "./post-consume";
-

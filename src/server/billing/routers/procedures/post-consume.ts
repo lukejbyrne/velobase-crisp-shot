@@ -8,5 +8,3 @@ export const postConsumeProcedure = protectedProcedure
   .mutation(async ({ input }) => {
     return postConsume(input);
   });
-
-

@@ -8,4 +8,3 @@ export const grantProcedure = protectedProcedure
   .mutation(async ({ input }) => {
     return grant(input);
   });
-

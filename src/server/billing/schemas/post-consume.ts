@@ -23,4 +23,3 @@ export const PostConsumeOutputSchema = z.object({
   consumeDetails: z.array(PostConsumeDetailSchema),
   consumedAt: z.string(),
 });
-

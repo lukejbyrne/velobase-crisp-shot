@@ -8,4 +8,3 @@ export const consumeProcedure = protectedProcedure
   .mutation(async ({ input }) => {
     return consume(input);
   });
-

@@ -1,8 +1,5 @@
 import { z } from "zod";
-import {
-  BillingBusinessTypeSchema,
-  BillingSourceSchema,
-} from "./shared";
+import { BillingBusinessTypeSchema, BillingSourceSchema } from "./shared";
 
 export const GrantInputSchema = z.object({
   userId: z.string().min(1),

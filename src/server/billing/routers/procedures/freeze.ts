@@ -8,4 +8,3 @@ export const freezeProcedure = protectedProcedure
   .mutation(async ({ input }) => {
     return freeze(input);
   });
-
