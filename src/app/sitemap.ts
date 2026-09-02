@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next";
+import { getBaseUrl } from "@/lib/base-url";
 
-const baseUrl = "https://example.com";
+const baseUrl = getBaseUrl();
 
 export default function sitemap(): MetadataRoute.Sitemap {
   // 静态页面 - 公开可访问的页面
@@ -17,18 +18,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
       lastModified: new Date(),
       changeFrequency: "weekly",
       priority: 0.9,
-    },
-    {
-      url: `${baseUrl}/explorer`,
-      lastModified: new Date(),
-      changeFrequency: "daily",
-      priority: 0.8,
-    },
-    {
-      url: `${baseUrl}/ads`,
-      lastModified: new Date(),
-      changeFrequency: "monthly",
-      priority: 0.6,
     },
     {
       url: `${baseUrl}/support`,
@@ -58,4 +47,3 @@ export default function sitemap(): MetadataRoute.Sitemap {
 
   return staticPages;
 }
-

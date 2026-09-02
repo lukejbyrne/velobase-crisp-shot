@@ -41,7 +41,7 @@ jobs:
           # setting them only as runtime env in Velobase has no effect on the
           # rendered page. Override via repository variables if these change.
           NEXT_PUBLIC_APP_NAME: ${{ vars.NEXT_PUBLIC_APP_NAME || 'CrispShot' }}
-          NEXT_PUBLIC_SUPPORT_EMAIL: ${{ vars.NEXT_PUBLIC_SUPPORT_EMAIL }}
+          NEXT_PUBLIC_SUPPORT_EMAIL: ${{ vars.NEXT_PUBLIC_SUPPORT_EMAIL || 'support@crispshot.app' }}
 
       - name: Create empty .env for Docker builds
         run: touch .env

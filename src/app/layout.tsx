@@ -27,6 +27,7 @@ import { DeviceKeyEnsurer } from "@/components/device-key-ensurer";
 import { ServiceNoticeBanner } from "@/components/layout/service-notice-banner";
 
 import { APP_NAME } from "@/config/brand";
+import { getBaseUrl } from "@/lib/base-url";
 
 const CONSENT_COOKIE = "app_cookie_consent";
 
@@ -41,13 +42,30 @@ export const metadata: Metadata = {
     { rel: "icon", url: "/favicon.ico", sizes: "any" },
     { rel: "icon", url: "/favicon.svg", type: "image/svg+xml" },
   ],
+  // Without these a shared link renders as a bare URL.
+  metadataBase: new URL(getBaseUrl()),
+  alternates: { canonical: "/" },
+  openGraph: {
+    type: "website",
+    siteName: APP_NAME,
+    url: "/",
+    title: `${APP_NAME} — professional AI headshots from one photo`,
+    description:
+      "Upload one clear portrait and get four studio-grade professional headshots. Pay per finished photo, with failed generations refunded automatically.",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: `${APP_NAME} — professional AI headshots from one photo`,
+    description:
+      "Upload one clear portrait and get four studio-grade professional headshots.",
+  },
 };
 
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
+  // Pinch-zoom stays enabled: disabling it fails WCAG 1.4.4 and the layout is
+  // responsive, so there is nothing to protect against.
 };
 
 // Inter 字体用于正文 - ChatGPT 风格
