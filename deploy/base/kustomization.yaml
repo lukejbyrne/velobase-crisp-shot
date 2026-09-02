@@ -1,0 +1,30 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# ============================================================================
+# Split mode (default): Web + Worker Deployments + Services
+#
+# To switch to standalone Web + Worker mode, comment out the split resources
+# below and uncomment the standalone section.
+# To enable the optional API service, uncomment deployment-api.yaml and
+# service-api.yaml.
+# ============================================================================
+
+resources:
+# --- Split mode (Web + Worker as separate pods) ---
+- deployment.yaml
+- deployment-worker.yaml
+- service.yaml
+- service-worker.yaml
+- ingress.yaml
+
+# --- Optional API service (enable only after adding real Hono routes) ---
+# - deployment-api.yaml
+# - service-api.yaml
+
+# --- Standalone mode (single pod, SERVICE_MODE=web,worker by default) ---
+# Uncomment these and comment out the split resources above:
+# - deployment-standalone.yaml
+# - service.yaml
+# - service-worker.yaml
+# - ingress.yaml

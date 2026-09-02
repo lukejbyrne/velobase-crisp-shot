@@ -1,0 +1,61 @@
+# ===========================================================================
+# Standalone Web + Worker Deployment
+#
+# Use this instead of split Deployments when you want a single Pod running
+# Web + Worker together. Set SERVICE_MODE=all and expose port 3002 only when
+# the optional Hono API service has real routes to serve.
+#
+# To switch: in kustomization.yaml, replace the three deployment + service
+# resources with this file and service-standalone.yaml.
+# ===========================================================================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: velobase-harness
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: velobase-harness
+  template:
+    metadata:
+      labels:
+        app: velobase-harness
+    spec:
+      # imagePullSecrets:
+      # - name: your-registry-secret
+      containers:
+      - name: velobase-harness
+        image: your-registry/your-org/velobase-harness
+        ports:
+        - name: web
+          containerPort: 3000
+        - name: worker
+          containerPort: 3001
+        livenessProbe:
+          httpGet:
+            path: /api/health
+            port: 3000
+          initialDelaySeconds: 20
+          periodSeconds: 30
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /api/ready
+            port: 3000
+          initialDelaySeconds: 15
+          periodSeconds: 30
+          timeoutSeconds: 5
+          successThreshold: 1
+        env:
+        - name: APP_NAME
+          value: velobase-harness
+        - name: SERVICE_MODE
+          value: "web,worker"
+        - name: POD_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+        - name: AUTH_TRUST_HOST
+          value: "true"

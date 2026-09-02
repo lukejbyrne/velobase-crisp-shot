@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: velobase-harness
+spec:
+  selector:
+    matchLabels:
+      app: velobase-harness
+  template:
+    metadata:
+      labels:
+        app: velobase-harness
+    spec:
+      # imagePullSecrets:
+      # - name: your-registry-secret
+      containers:
+      - name: velobase-harness
+        image: your-registry/your-org/velobase-harness-web
+        ports:
+        - containerPort: 3000
+        livenessProbe:
+          httpGet:
+            path: /api/health
+            port: 3000
+          initialDelaySeconds: 15
+          periodSeconds: 30
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /api/ready
+            port: 3000
+          initialDelaySeconds: 10
+          periodSeconds: 30
+          timeoutSeconds: 5
+          successThreshold: 1
+        env:
+        - name: APP_NAME
+          value: velobase-harness
+        - name: SERVICE_MODE
+          value: "web"
+        - name: POD_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+        - name: AUTH_TRUST_HOST
+          value: "true"
+

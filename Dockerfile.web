@@ -1,0 +1,28 @@
+FROM node:20-slim
+WORKDIR /app
+
+# Install OpenSSL for Prisma and fonts for Sharp SVG text rendering
+RUN apt-get update -y && apt-get install -y openssl ca-certificates fontconfig fonts-liberation && rm -rf /var/lib/apt/lists/*
+
+# Set environment variables
+ENV NODE_ENV=production
+
+# Copy built files (including standalone server and its node_modules)
+COPY public ./public
+COPY .next/standalone ./
+COPY .next/static ./.next/static
+COPY next.config.js ./
+COPY package.json pnpm-lock.yaml ./
+COPY prisma ./prisma
+COPY docker-entrypoint.web.sh ./
+
+RUN npm install -g prisma@6.19.0 && \
+    chmod +x docker-entrypoint.web.sh && \
+    npm cache clean --force && \
+    rm -rf /root/.cache
+
+# Expose port
+EXPOSE 3000
+
+# Start application
+CMD ["./docker-entrypoint.web.sh"]

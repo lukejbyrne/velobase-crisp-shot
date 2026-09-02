@@ -1,0 +1,45 @@
+# =============================================================================
+# Dockerfile.api — Minimal image for the standalone Hono API service
+#
+# Use this when you want a smaller image that only runs the API service,
+# without Next.js build artifacts. Otherwise use the unified Dockerfile
+# with SERVICE_MODE=api.
+# =============================================================================
+
+FROM node:20-slim AS runner
+WORKDIR /app
+
+# System dependencies for Prisma
+RUN apt-get update -y && \
+    apt-get install -y openssl ca-certificates && \
+    rm -rf /var/lib/apt/lists/*
+
+ENV NODE_ENV=production
+
+# Install dependencies
+COPY package.json pnpm-lock.yaml ./
+COPY prisma ./prisma
+RUN corepack enable pnpm && \
+    pnpm install --frozen-lockfile --prod --ignore-scripts && \
+    pnpm add tsx && \
+    pnpm prisma generate && \
+    rm -rf /root/.cache
+
+# Create non-root user and logs directory
+RUN addgroup --system --gid 1001 nodejs && \
+    adduser --system --uid 1001 apiuser && \
+    mkdir -p /app/logs && chown apiuser:nodejs /app/logs
+
+# Copy API source and shared modules
+COPY --chown=apiuser:nodejs src/api ./src/api
+COPY --chown=apiuser:nodejs src/lib ./src/lib
+COPY --chown=apiuser:nodejs src/server ./src/server
+COPY --chown=apiuser:nodejs src/analytics ./src/analytics
+COPY --chown=apiuser:nodejs src/env.js ./src/env.js
+COPY --chown=apiuser:nodejs tsconfig.json ./
+
+USER apiuser
+
+EXPOSE 3002
+
+CMD ["node", "--import", "tsx", "src/api/index.ts"]

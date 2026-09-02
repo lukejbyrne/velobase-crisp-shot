@@ -1,0 +1,437 @@
+import { createEnv } from "@t3-oss/env-nextjs";
+import { z } from "zod";
+import {
+  createAuthSecretSchema,
+  normalizeAuthEnvironment,
+  serviceModeSchema,
+} from "./env-normalization.js";
+
+// Auth.js v5 prefers AUTH_* and keeps NEXTAUTH_* as backwards-compatible
+// aliases. AUTH_* wins only when non-empty so an empty canonical variable does
+// not mask a configured legacy fallback.
+const { authSecret, authUrl, appUrl } = normalizeAuthEnvironment(process.env);
+
+const port = z
+  .string()
+  .regex(/^\d+$/)
+  .transform((value) => Number.parseInt(value, 10))
+  .refine((value) => value >= 1 && value <= 65535, "Must be a valid port");
+
+const positiveInteger = z
+  .string()
+  .regex(/^\d+$/)
+  .transform((value) => Number.parseInt(value, 10))
+  .refine((value) => value > 0, "Must be a positive integer");
+
+export const env = createEnv({
+  /**
+   * Specify your server-side environment variables schema here. This way you can ensure the app
+   * isn't built with invalid env vars.
+   */
+  server: {
+    AUTH_SECRET: createAuthSecretSchema(process.env.NODE_ENV),
+    AUTH_URL: z.string().url().optional(),
+    NEXTAUTH_SECRET: z.string().optional(),
+    NEXTAUTH_URL: z.string().url().optional(),
+    APP_URL: z.string().url().optional(),
+    SERVICE_MODE: serviceModeSchema,
+    PORT: port.optional().default("3000"),
+    WEB_HOST: z.string().optional().default("0.0.0.0"),
+    API_PORT: port.optional().default("3002"),
+    WORKER_PORT: port.optional().default("3001"),
+    WEBHOOK_URL: z.string().url().optional(),
+    PASSWORD_LOGIN_SEED_PASSWORD: z.string().min(12).optional(),
+    COOKIE_SECURE: z
+      .enum(["true", "false"])
+      .optional()
+      .transform((value) => (value == null ? undefined : value === "true")),
+    AUTH_DISCORD_ID: z.string().optional(),
+    AUTH_DISCORD_SECRET: z.string().optional(),
+    AUTH_GOOGLE_ID: z.string().optional(),
+    AUTH_GOOGLE_SECRET: z.string().optional(),
+    AUTH_GITHUB_ID: z.string().optional(),
+    AUTH_GITHUB_SECRET: z.string().optional(),
+    GITHUB_CLIENT_ID: z.string().optional(),
+    GITHUB_CLIENT_SECRET: z.string().optional(),
+    EMAIL_ABUSE_SAME_IP_WINDOW_HOURS: positiveInteger.optional().default("24"),
+    EMAIL_ABUSE_SAME_IP_MIN_PRIOR_DIFFERENT_DEVICE: positiveInteger
+      .optional()
+      .default("1"),
+    EMAIL_ABUSE_SAME_IP_MIN_PRIOR_UNKNOWN_DEVICE: positiveInteger
+      .optional()
+      .default("1"),
+    EMAIL_ABUSE_SAME_IP_MAX_TOTAL_HISTORY: positiveInteger
+      .optional()
+      .default("20"),
+    DATABASE_URL: z.string().url(),
+    // Redis: either REDIS_URL (Velobase Cloud / managed) or individual REDIS_HOST+PORT fields
+    REDIS_URL: z.string().url().optional(),
+    REDIS_HOST: z.string().optional(),
+    REDIS_PORT: z
+      .string()
+      .optional()
+      .transform((val) => (val ? parseInt(val, 10) : undefined)),
+    REDIS_USER: z.string().optional(),
+    REDIS_PASSWORD: z.string().optional(),
+    REDIS_DB: z
+      .string()
+      .transform((val) => parseInt(val, 10))
+      .default("0"),
+    ANTHROPIC_API_KEY: z.string().optional(),
+    OPENROUTER_API_KEY: z.string().optional(),
+    OPENAI_API_KEY: z.string().optional(),
+    OPENAI_BASE_URL: z.string().url().optional(),
+    WAVESPEED_API_KEY: z.string().optional(),
+    WAVESPEED_BASE_URL: z
+      .string()
+      .url()
+      .optional()
+      .default("https://api.wavespeed.ai"),
+    WAVESPEED_REQUEST_TIMEOUT_MS: z
+      .string()
+      .regex(/^\d+$/)
+      .optional()
+      .transform((val) => (val ? parseInt(val, 10) : 30000)),
+    CDN_BASE_URL: z.string().url().optional(),
+    STORAGE_PROVIDER: z
+      .enum(["aws", "aliyun", "gcs", "minio", "r2", "filesystem"])
+      .optional()
+      .default("r2"),
+    STORAGE_REGION: z.string().optional(),
+    STORAGE_BUCKET: z.string().optional(),
+    STORAGE_ACCESS_KEY_ID: z.string().optional(),
+    STORAGE_SECRET_ACCESS_KEY: z.string().optional(),
+    STORAGE_ENDPOINT: z.string().optional(),
+    STORAGE_FILESYSTEM_ROOT: z.string().optional(),
+    STORAGE_FILESYSTEM_PUBLIC_BASE_URL: z.string().url().optional(),
+    // Optional key prefix for shared-bucket deployments (not needed with per-tenant buckets)
+    STORAGE_PATH_PREFIX: z.string().optional(),
+    STRIPE_SECRET_KEY: z.string().optional(),
+    STRIPE_WEBHOOK_SECRET: z.string().optional(),
+    PAYMENT_RECONCILIATION_FORCE: z
+      .enum(["0", "1"])
+      .optional()
+      .transform((value) => value === "1"),
+    // Force payment gateway for testing (bypasses default Stripe routing)
+    FORCE_PAYMENT_GATEWAY: z
+      .enum(["STRIPE", "NOWPAYMENTS", "LEMONSQUEEZY"])
+      .optional(),
+    LEMONSQUEEZY_API_KEY: z.string().optional(),
+    LEMONSQUEEZY_STORE_ID: z.string().optional(),
+    LEMONSQUEEZY_WEBHOOK_SECRET: z.string().optional(),
+    LEMONSQUEEZY_TEST_MODE: z
+      .string()
+      .optional()
+      .transform((val) => (val == null ? undefined : val === "true")),
+    LEMONSQUEEZY_TEST_VARIANT_ID: z.string().optional(),
+    LEMONSQUEEZY_TEST_SUBSCRIPTION_VARIANT_ID: z.string().optional(),
+    NOWPAYMENTS_API_KEY: z.string().optional(),
+    NOWPAYMENTS_IPN_SECRET: z.string().optional(),
+    NOWPAYMENTS_PAY_CURRENCY: z.string().optional().default("usdttrc20"),
+    // Google Ads
+    GOOGLE_ADS_CLIENT_ID: z.string().optional(),
+    GOOGLE_ADS_CLIENT_SECRET: z.string().optional(),
+    GOOGLE_ADS_DEVELOPER_TOKEN: z.string().optional(),
+    GOOGLE_ADS_REFRESH_TOKEN: z.string().optional(),
+    GOOGLE_ADS_MCC_ID: z.string().optional(),
+    GOOGLE_ADS_CUSTOMER_ID: z.string().optional(),
+    GOOGLE_ADS_CONVERSION_ACTION_ID: z.string().optional(),
+    // Web purchase conversion action (WEBPAGE) used for Enhanced Conversions API (ConversionAdjustment ENHANCEMENT)
+    GOOGLE_ADS_WEB_CONVERSION_ACTION_ID: z.string().optional(),
+    DATALAB_API_KEY: z.string().optional(),
+    DATALAB_BASE_URL: z
+      .string()
+      .url()
+      .optional()
+      .default("https://api.datalab.to"),
+    XAI_API_KEY: z.string().optional(),
+    // Email Services
+    RESEND_API_KEY: z.string().optional(),
+    RESEND_WEBHOOK_SECRET: z.string().optional(),
+    SENDGRID_API_KEY: z.string().optional(),
+    EMAIL_PROVIDER: z.string().optional().default("resend,sendgrid"),
+    EMAIL_FROM: z.string().optional(),
+    // Support automation mailbox (IMAP/SMTP)
+    SUPPORT_EMAIL_ADDRESS: z.string().email().optional(),
+    SUPPORT_EMAIL_PASSWORD: z.string().optional(),
+    SUPPORT_IMAP_HOST: z.string().optional(),
+    SUPPORT_IMAP_PORT: z
+      .string()
+      .regex(/^\d+$/)
+      .optional()
+      .transform((val) => (val ? parseInt(val, 10) : 993)),
+    SUPPORT_SMTP_HOST: z.string().optional(),
+    SUPPORT_SMTP_PORT: z
+      .string()
+      .regex(/^\d+$/)
+      .optional()
+      .transform((val) => (val ? parseInt(val, 10) : 465)),
+    SUPPORT_EMAIL_FROM: z.string().optional(),
+    // Lark Bot
+    LARK_APP_ID: z.string().optional(),
+    LARK_APP_SECRET: z.string().optional(),
+    LARK_USE_FEISHU: z
+      .string()
+      .optional()
+      .transform((val) => val === "true"),
+    LARK_DEFAULT_CHAT_ID: z.string().optional(),
+    LARK_BILLING_RECONCILIATION_AT_OPEN_ID: z.string().optional(),
+    LARK_ENCRYPT_KEY: z.string().optional(),
+    LARK_VERIFICATION_TOKEN: z.string().optional(),
+    // Feishu Bot (国内飞书)
+    FEISHU_APP_ID: z.string().optional(),
+    FEISHU_APP_SECRET: z.string().optional(),
+    // Telegram Bot (Stars payment)
+    TELEGRAM_BOT_TOKEN: z.string().optional(),
+    TELEGRAM_WEBHOOK_SECRET: z.string().optional(),
+    // Cloudflare Turnstile
+    TURNSTILE_SECRET_KEY: z.string().optional(),
+    // Velobase Billing
+    VELOBASE_API_KEY: z.string().optional(),
+    // Velobase Gateway (OpenAI-compatible model routing)
+    VELOBASE_GATEWAY_API_KEY: z.string().optional(),
+    VELOBASE_GATEWAY_BASE_URL: z
+      .string()
+      .url()
+      .optional()
+      .default("https://api.velobase.io/v1"),
+    VELOBASE_GATEWAY_DEFAULT_MODEL: z
+      .string()
+      .optional()
+      .default("deepseek/deepseek-v4-pro"),
+    VELOBASE_GATEWAY_TEST_CUSTOMER_ID: z.string().optional(),
+    VELOBASE_GATEWAY_REQUEST_TIMEOUT_MS: z
+      .string()
+      .regex(/^\d+$/)
+      .optional()
+      .transform((val) => (val ? parseInt(val, 10) : 30000)),
+    // Module modes: off | auto | on
+    POSTHOG_API_KEY: z.string().optional(),
+    POSTHOG_MODE: z.enum(["off", "auto", "on"]).optional(),
+    GOOGLE_ADS_MODE: z.enum(["off", "auto", "on"]).optional(),
+    LARK_MODE: z.enum(["off", "auto", "on"]).optional(),
+    TELEGRAM_MODE: z.enum(["off", "auto", "on"]).optional(),
+    STRIPE_MODE: z.enum(["off", "auto", "on"]).optional(),
+    NOWPAYMENTS_MODE: z.enum(["off", "auto", "on"]).optional(),
+    LEMONSQUEEZY_MODE: z.enum(["off", "auto", "on"]).optional(),
+    PAYMENT_RECONCILIATION_MODE: z.enum(["off", "auto", "on"]).optional(),
+    AFFILIATE_MODE: z.enum(["off", "auto", "on"]).optional(),
+    TOUCH_MODE: z.enum(["off", "auto", "on"]).optional(),
+    SUPPORT_AUTOMATION_MODE: z.enum(["off", "auto", "on"]).optional(),
+    CONVERSION_ALERT_MODE: z.enum(["off", "auto", "on"]).optional(),
+    AI_CHAT_MODE: z.enum(["off", "auto", "on"]).optional(),
+    VELOBASE_GATEWAY_MODE: z.enum(["off", "auto", "on"]).optional(),
+    IMAGE_GENERATION_MODE: z.enum(["off", "auto", "on"]).optional(),
+    NODE_ENV: z
+      .enum(["development", "test", "production"])
+      .default("development"),
+  },
+
+  /**
+   * Specify your client-side environment variables schema here. This way you can ensure the app
+   * isn't built with invalid env vars. To expose them to the client, prefix them with
+   * `NEXT_PUBLIC_`.
+   */
+  client: {
+    NEXT_PUBLIC_APP_ENV: z.enum(["dev", "staging", "prod"]).default("dev"),
+    NEXT_PUBLIC_APP_NAME: z.string().optional(),
+    NEXT_PUBLIC_SUPPORT_EMAIL: z.string().email().optional(),
+    NEXT_PUBLIC_PASSWORD_LOGIN_EMAILS: z
+      .string()
+      .optional()
+      .refine(
+        (value) =>
+          !value ||
+          value
+            .split(",")
+            .every(
+              (email) => z.string().email().safeParse(email.trim()).success,
+            ),
+        "Must be a comma-separated list of email addresses",
+      ),
+    NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: z.string().optional(),
+    NEXT_PUBLIC_TURNSTILE_SITE_KEY: z.string().optional(),
+    NEXT_PUBLIC_TELEGRAM_BOT_USERNAME: z.string().optional(),
+    NEXT_PUBLIC_POSTHOG_KEY: z.string().optional(),
+    NEXT_PUBLIC_POSTHOG_HOST: z.string().url().optional(),
+    NEXT_PUBLIC_GOOGLE_ADS_MEASUREMENT_ID: z.string().optional(),
+    NEXT_PUBLIC_GOOGLE_ADS_CONVERSION_LABEL: z.string().optional(),
+    NEXT_PUBLIC_TWITTER_PIXEL_ID: z.string().optional(),
+    NEXT_PUBLIC_TWITTER_PURCHASE_EVENT_ID: z.string().optional(),
+    NEXT_PUBLIC_PROPELLER_AID: z.string().optional(),
+    NEXT_PUBLIC_PROPELLER_TID: z.string().optional(),
+    NEXT_PUBLIC_TJ_ACCOUNT_ID: z.string().optional(),
+    NEXT_PUBLIC_TJ_MEMBER_ID: z.string().optional(),
+  },
+
+  /**
+   * You can't destruct `process.env` as a regular object in the Next.js edge runtimes (e.g.
+   * middlewares) or client-side so we need to destruct manually.
+   */
+  runtimeEnv: {
+    AUTH_SECRET: authSecret,
+    AUTH_URL: authUrl,
+    NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET,
+    NEXTAUTH_URL: process.env.NEXTAUTH_URL,
+    APP_URL: appUrl,
+    SERVICE_MODE: process.env.SERVICE_MODE,
+    PORT: process.env.PORT,
+    WEB_HOST: process.env.WEB_HOST,
+    API_PORT: process.env.API_PORT,
+    WORKER_PORT: process.env.WORKER_PORT,
+    WEBHOOK_URL: process.env.WEBHOOK_URL,
+    PASSWORD_LOGIN_SEED_PASSWORD: process.env.PASSWORD_LOGIN_SEED_PASSWORD,
+    COOKIE_SECURE: process.env.COOKIE_SECURE,
+    AUTH_DISCORD_ID: process.env.AUTH_DISCORD_ID,
+    AUTH_DISCORD_SECRET: process.env.AUTH_DISCORD_SECRET,
+    AUTH_GOOGLE_ID: process.env.AUTH_GOOGLE_ID,
+    AUTH_GOOGLE_SECRET: process.env.AUTH_GOOGLE_SECRET,
+    AUTH_GITHUB_ID: process.env.AUTH_GITHUB_ID,
+    AUTH_GITHUB_SECRET: process.env.AUTH_GITHUB_SECRET,
+    GITHUB_CLIENT_ID: process.env.GITHUB_CLIENT_ID,
+    GITHUB_CLIENT_SECRET: process.env.GITHUB_CLIENT_SECRET,
+    EMAIL_ABUSE_SAME_IP_WINDOW_HOURS:
+      process.env.EMAIL_ABUSE_SAME_IP_WINDOW_HOURS,
+    EMAIL_ABUSE_SAME_IP_MIN_PRIOR_DIFFERENT_DEVICE:
+      process.env.EMAIL_ABUSE_SAME_IP_MIN_PRIOR_DIFFERENT_DEVICE,
+    EMAIL_ABUSE_SAME_IP_MIN_PRIOR_UNKNOWN_DEVICE:
+      process.env.EMAIL_ABUSE_SAME_IP_MIN_PRIOR_UNKNOWN_DEVICE,
+    EMAIL_ABUSE_SAME_IP_MAX_TOTAL_HISTORY:
+      process.env.EMAIL_ABUSE_SAME_IP_MAX_TOTAL_HISTORY,
+    DATABASE_URL: process.env.DATABASE_URL,
+    REDIS_URL: process.env.REDIS_URL,
+    REDIS_HOST: process.env.REDIS_HOST,
+    REDIS_PORT: process.env.REDIS_PORT,
+    REDIS_USER: process.env.REDIS_USER,
+    REDIS_PASSWORD: process.env.REDIS_PASSWORD,
+    REDIS_DB: process.env.REDIS_DB,
+    ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY,
+    OPENROUTER_API_KEY: process.env.OPENROUTER_API_KEY,
+    OPENAI_API_KEY: process.env.OPENAI_API_KEY,
+    OPENAI_BASE_URL: process.env.OPENAI_BASE_URL,
+    WAVESPEED_API_KEY: process.env.WAVESPEED_API_KEY,
+    WAVESPEED_BASE_URL: process.env.WAVESPEED_BASE_URL,
+    WAVESPEED_REQUEST_TIMEOUT_MS: process.env.WAVESPEED_REQUEST_TIMEOUT_MS,
+    CDN_BASE_URL: process.env.CDN_BASE_URL,
+    STORAGE_PROVIDER: process.env.STORAGE_PROVIDER,
+    STORAGE_REGION: process.env.STORAGE_REGION,
+    STORAGE_BUCKET: process.env.STORAGE_BUCKET,
+    STORAGE_ACCESS_KEY_ID: process.env.STORAGE_ACCESS_KEY_ID,
+    STORAGE_SECRET_ACCESS_KEY: process.env.STORAGE_SECRET_ACCESS_KEY,
+    STORAGE_ENDPOINT: process.env.STORAGE_ENDPOINT,
+    STORAGE_FILESYSTEM_ROOT: process.env.STORAGE_FILESYSTEM_ROOT,
+    STORAGE_FILESYSTEM_PUBLIC_BASE_URL:
+      process.env.STORAGE_FILESYSTEM_PUBLIC_BASE_URL,
+    STORAGE_PATH_PREFIX: process.env.STORAGE_PATH_PREFIX,
+    STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY,
+    STRIPE_WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET,
+    PAYMENT_RECONCILIATION_FORCE: process.env.PAYMENT_RECONCILIATION_FORCE,
+    FORCE_PAYMENT_GATEWAY: process.env.FORCE_PAYMENT_GATEWAY,
+    LEMONSQUEEZY_API_KEY: process.env.LEMONSQUEEZY_API_KEY,
+    LEMONSQUEEZY_STORE_ID: process.env.LEMONSQUEEZY_STORE_ID,
+    LEMONSQUEEZY_WEBHOOK_SECRET: process.env.LEMONSQUEEZY_WEBHOOK_SECRET,
+    LEMONSQUEEZY_TEST_MODE: process.env.LEMONSQUEEZY_TEST_MODE,
+    LEMONSQUEEZY_TEST_VARIANT_ID: process.env.LEMONSQUEEZY_TEST_VARIANT_ID,
+    LEMONSQUEEZY_TEST_SUBSCRIPTION_VARIANT_ID:
+      process.env.LEMONSQUEEZY_TEST_SUBSCRIPTION_VARIANT_ID,
+    NOWPAYMENTS_API_KEY: process.env.NOWPAYMENTS_API_KEY,
+    NOWPAYMENTS_IPN_SECRET: process.env.NOWPAYMENTS_IPN_SECRET,
+    NOWPAYMENTS_PAY_CURRENCY: process.env.NOWPAYMENTS_PAY_CURRENCY,
+    GOOGLE_ADS_CLIENT_ID: process.env.GOOGLE_ADS_CLIENT_ID,
+    GOOGLE_ADS_CLIENT_SECRET: process.env.GOOGLE_ADS_CLIENT_SECRET,
+    GOOGLE_ADS_DEVELOPER_TOKEN: process.env.GOOGLE_ADS_DEVELOPER_TOKEN,
+    GOOGLE_ADS_REFRESH_TOKEN: process.env.GOOGLE_ADS_REFRESH_TOKEN,
+    GOOGLE_ADS_MCC_ID: process.env.GOOGLE_ADS_MCC_ID,
+    GOOGLE_ADS_CUSTOMER_ID: process.env.GOOGLE_ADS_CUSTOMER_ID,
+    GOOGLE_ADS_CONVERSION_ACTION_ID:
+      process.env.GOOGLE_ADS_CONVERSION_ACTION_ID,
+    GOOGLE_ADS_WEB_CONVERSION_ACTION_ID:
+      process.env.GOOGLE_ADS_WEB_CONVERSION_ACTION_ID,
+    DATALAB_API_KEY: process.env.DATALAB_API_KEY,
+    DATALAB_BASE_URL: process.env.DATALAB_BASE_URL,
+    XAI_API_KEY: process.env.XAI_API_KEY,
+    RESEND_API_KEY: process.env.RESEND_API_KEY,
+    RESEND_WEBHOOK_SECRET: process.env.RESEND_WEBHOOK_SECRET,
+    SENDGRID_API_KEY: process.env.SENDGRID_API_KEY,
+    EMAIL_PROVIDER: process.env.EMAIL_PROVIDER,
+    EMAIL_FROM: process.env.EMAIL_FROM,
+    SUPPORT_EMAIL_ADDRESS: process.env.SUPPORT_EMAIL_ADDRESS,
+    SUPPORT_EMAIL_PASSWORD: process.env.SUPPORT_EMAIL_PASSWORD,
+    SUPPORT_IMAP_HOST: process.env.SUPPORT_IMAP_HOST,
+    SUPPORT_IMAP_PORT: process.env.SUPPORT_IMAP_PORT,
+    SUPPORT_SMTP_HOST: process.env.SUPPORT_SMTP_HOST,
+    SUPPORT_SMTP_PORT: process.env.SUPPORT_SMTP_PORT,
+    SUPPORT_EMAIL_FROM: process.env.SUPPORT_EMAIL_FROM,
+    LARK_APP_ID: process.env.LARK_APP_ID,
+    LARK_APP_SECRET: process.env.LARK_APP_SECRET,
+    LARK_USE_FEISHU: process.env.LARK_USE_FEISHU,
+    LARK_DEFAULT_CHAT_ID: process.env.LARK_DEFAULT_CHAT_ID,
+    LARK_BILLING_RECONCILIATION_AT_OPEN_ID:
+      process.env.LARK_BILLING_RECONCILIATION_AT_OPEN_ID,
+    LARK_ENCRYPT_KEY: process.env.LARK_ENCRYPT_KEY,
+    LARK_VERIFICATION_TOKEN: process.env.LARK_VERIFICATION_TOKEN,
+    FEISHU_APP_ID: process.env.FEISHU_APP_ID,
+    FEISHU_APP_SECRET: process.env.FEISHU_APP_SECRET,
+    TELEGRAM_BOT_TOKEN: process.env.TELEGRAM_BOT_TOKEN,
+    TELEGRAM_WEBHOOK_SECRET: process.env.TELEGRAM_WEBHOOK_SECRET,
+    TURNSTILE_SECRET_KEY: process.env.TURNSTILE_SECRET_KEY,
+    VELOBASE_API_KEY: process.env.VELOBASE_API_KEY,
+    VELOBASE_GATEWAY_API_KEY: process.env.VELOBASE_GATEWAY_API_KEY,
+    VELOBASE_GATEWAY_BASE_URL: process.env.VELOBASE_GATEWAY_BASE_URL,
+    VELOBASE_GATEWAY_DEFAULT_MODEL: process.env.VELOBASE_GATEWAY_DEFAULT_MODEL,
+    VELOBASE_GATEWAY_TEST_CUSTOMER_ID:
+      process.env.VELOBASE_GATEWAY_TEST_CUSTOMER_ID,
+    VELOBASE_GATEWAY_REQUEST_TIMEOUT_MS:
+      process.env.VELOBASE_GATEWAY_REQUEST_TIMEOUT_MS,
+    POSTHOG_API_KEY: process.env.POSTHOG_API_KEY,
+    POSTHOG_MODE: process.env.POSTHOG_MODE,
+    GOOGLE_ADS_MODE: process.env.GOOGLE_ADS_MODE,
+    LARK_MODE: process.env.LARK_MODE,
+    TELEGRAM_MODE: process.env.TELEGRAM_MODE,
+    STRIPE_MODE: process.env.STRIPE_MODE,
+    NOWPAYMENTS_MODE: process.env.NOWPAYMENTS_MODE,
+    LEMONSQUEEZY_MODE: process.env.LEMONSQUEEZY_MODE,
+    PAYMENT_RECONCILIATION_MODE: process.env.PAYMENT_RECONCILIATION_MODE,
+    AFFILIATE_MODE: process.env.AFFILIATE_MODE,
+    TOUCH_MODE: process.env.TOUCH_MODE,
+    SUPPORT_AUTOMATION_MODE: process.env.SUPPORT_AUTOMATION_MODE,
+    CONVERSION_ALERT_MODE: process.env.CONVERSION_ALERT_MODE,
+    AI_CHAT_MODE: process.env.AI_CHAT_MODE,
+    VELOBASE_GATEWAY_MODE: process.env.VELOBASE_GATEWAY_MODE,
+    IMAGE_GENERATION_MODE: process.env.IMAGE_GENERATION_MODE,
+    NODE_ENV: process.env.NODE_ENV,
+    NEXT_PUBLIC_APP_ENV: process.env.NEXT_PUBLIC_APP_ENV,
+    NEXT_PUBLIC_APP_NAME: process.env.NEXT_PUBLIC_APP_NAME,
+    NEXT_PUBLIC_SUPPORT_EMAIL: process.env.NEXT_PUBLIC_SUPPORT_EMAIL,
+    NEXT_PUBLIC_PASSWORD_LOGIN_EMAILS:
+      process.env.NEXT_PUBLIC_PASSWORD_LOGIN_EMAILS,
+    NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY:
+      process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY,
+    NEXT_PUBLIC_TURNSTILE_SITE_KEY: process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY,
+    NEXT_PUBLIC_TELEGRAM_BOT_USERNAME:
+      process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME,
+    NEXT_PUBLIC_POSTHOG_KEY: process.env.NEXT_PUBLIC_POSTHOG_KEY,
+    NEXT_PUBLIC_POSTHOG_HOST: process.env.NEXT_PUBLIC_POSTHOG_HOST,
+    NEXT_PUBLIC_GOOGLE_ADS_MEASUREMENT_ID:
+      process.env.NEXT_PUBLIC_GOOGLE_ADS_MEASUREMENT_ID,
+    NEXT_PUBLIC_GOOGLE_ADS_CONVERSION_LABEL:
+      process.env.NEXT_PUBLIC_GOOGLE_ADS_CONVERSION_LABEL,
+    NEXT_PUBLIC_TWITTER_PIXEL_ID: process.env.NEXT_PUBLIC_TWITTER_PIXEL_ID,
+    NEXT_PUBLIC_TWITTER_PURCHASE_EVENT_ID:
+      process.env.NEXT_PUBLIC_TWITTER_PURCHASE_EVENT_ID,
+    NEXT_PUBLIC_PROPELLER_AID: process.env.NEXT_PUBLIC_PROPELLER_AID,
+    NEXT_PUBLIC_PROPELLER_TID: process.env.NEXT_PUBLIC_PROPELLER_TID,
+    NEXT_PUBLIC_TJ_ACCOUNT_ID: process.env.NEXT_PUBLIC_TJ_ACCOUNT_ID,
+    NEXT_PUBLIC_TJ_MEMBER_ID: process.env.NEXT_PUBLIC_TJ_MEMBER_ID,
+  },
+  /**
+   * Run `build` or `dev` with `SKIP_ENV_VALIDATION` to skip env validation. This is especially
+   * useful for Docker builds.
+   */
+  skipValidation: !!process.env.SKIP_ENV_VALIDATION,
+  /**
+   * Makes it so that empty strings are treated as undefined. `SOME_VAR: z.string()` and
+   * `SOME_VAR=''` will throw an error.
+   */
+  emptyStringAsUndefined: true,
+});

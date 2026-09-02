@@ -1,0 +1,138 @@
+# =============================================================================
+# docker-compose.test.yml — Web + Worker 默认运行时验证
+#
+# 用法：
+#   1. 先构建：  pnpm build && docker build -t velobase-harness-test .
+#   2. 启动测试： docker compose -f docker-compose.test.yml up -d
+#   3. 运行验证： node scripts/test-service-mode.mjs
+#   4. 清理：     docker compose -f docker-compose.test.yml down -v
+#
+# 包含三个测试 profile：
+#   - (默认)      基础设施 (postgres + redis)
+#   - standalone   SERVICE_MODE=web,worker 单 Pod 默认模式
+#   - split        SERVICE_MODE=web/worker 双 Pod 拆分模式
+#   - api          SERVICE_MODE=api 可选 API 服务模式
+# =============================================================================
+
+services:
+  # --- Infrastructure (always on) ---
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: velobase
+      POSTGRES_PASSWORD: velobase
+      POSTGRES_DB: velobase
+    ports:
+      - "5433:5432"
+    volumes:
+      - test_pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U velobase"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  redis:
+    image: redis:7
+    ports:
+      - "6380:6379"
+    volumes:
+      - test_redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # =====================================================================
+  # Test A: standalone mode (SERVICE_MODE=web,worker, single container)
+  # =====================================================================
+  app-standalone:
+    image: velobase-harness-test
+    profiles: ["standalone"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    ports:
+      - "4000:3000"   # Web
+      - "4001:3001"   # Worker
+    environment:
+      SERVICE_MODE: "web,worker"
+      NODE_ENV: production
+      SKIP_ENV_VALIDATION: "true"
+      DATABASE_URL: postgresql://velobase:velobase@postgres:5432/velobase
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+      AUTH_SECRET: test-secret-for-docker-validation
+      AUTH_URL: http://localhost:4000
+      WORKER_PORT: "3001"
+
+  # =====================================================================
+  # Test B: split mode (Web + Worker containers, same image)
+  # =====================================================================
+  app-web:
+    image: velobase-harness-test
+    profiles: ["split"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    ports:
+      - "5000:3000"
+    environment:
+      SERVICE_MODE: "web"
+      NODE_ENV: production
+      SKIP_ENV_VALIDATION: "true"
+      DATABASE_URL: postgresql://velobase:velobase@postgres:5432/velobase
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+      AUTH_SECRET: test-secret-for-docker-validation
+      AUTH_URL: http://localhost:5000
+      HOSTNAME: "0.0.0.0"
+
+  app-api:
+    image: velobase-harness-test
+    profiles: ["api"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    ports:
+      - "5002:3002"
+    environment:
+      SERVICE_MODE: "api"
+      NODE_ENV: production
+      SKIP_ENV_VALIDATION: "true"
+      DATABASE_URL: postgresql://velobase:velobase@postgres:5432/velobase
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+      AUTH_SECRET: test-secret-for-docker-validation
+      API_PORT: "3002"
+
+  app-worker:
+    image: velobase-harness-test
+    profiles: ["split"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    ports:
+      - "5001:3001"
+    environment:
+      SERVICE_MODE: "worker"
+      NODE_ENV: production
+      SKIP_ENV_VALIDATION: "true"
+      DATABASE_URL: postgresql://velobase:velobase@postgres:5432/velobase
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+      AUTH_SECRET: test-secret-for-docker-validation
+      WORKER_PORT: "3001"
+
+volumes:
+  test_pg_data:
+  test_redis_data:
