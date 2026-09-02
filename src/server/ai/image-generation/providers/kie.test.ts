@@ -21,7 +21,8 @@ mockModule(new URL("../../../../env.js", import.meta.url).href, {
   },
 });
 
-const { KieProvider, mapState, parseResultUrls } = await import("./kie");
+const { KieProvider, mapState, parseResultUrls, clampResolution } =
+  await import("./kie");
 
 /** The stub only ever receives a JSON string body, unlike the wider BodyInit. */
 type StubInit = Omit<RequestInit, "body"> & { body?: string };
@@ -203,4 +204,48 @@ void test("capabilities advertise the edit operation the product needs", () => {
   assert.equal(caps.provider, "kie");
   assert.ok(caps.operations.includes("edit-image"));
   assert.equal(caps.supportsPricing, false);
+});
+
+void test("resolution is clamped to what Kie accepts for the ratio", () => {
+  // Unset or auto ratio is 1K-only.
+  assert.equal(clampResolution("4k", undefined), "1k");
+  assert.equal(clampResolution("2k", "auto"), "1k");
+  // 5:4 and 4:5 are 1K-only.
+  assert.equal(clampResolution("4k", "5:4"), "1k");
+  assert.equal(clampResolution("2k", "4:5"), "1k");
+  // 1:1 cannot reach 4K.
+  assert.equal(clampResolution("4k", "1:1"), "2k");
+  // Otherwise untouched.
+  assert.equal(clampResolution("4k", "16:9"), "4k");
+  assert.equal(clampResolution("1k", "1:1"), "1k");
+});
+
+void test("a 4K request on a square ratio is downgraded, not rejected", async () => {
+  const { calls } = stubFetch([{ body: { code: 200, data: { taskId: "t" } } }]);
+  await new KieProvider().createPrediction({
+    model: "gpt-image-2-image-to-image",
+    operation: "edit-image",
+    prompt: "p",
+    aspectRatio: "1:1",
+    resolution: "4k",
+  });
+  const body = JSON.parse(calls[0]!.init.body ?? "{}") as {
+    input: Record<string, unknown>;
+  };
+  assert.equal(body.input.resolution, "2K");
+});
+
+void test("input_urls is capped at the documented maximum", async () => {
+  const { calls } = stubFetch([{ body: { code: 200, data: { taskId: "t" } } }]);
+  await new KieProvider().createPrediction({
+    model: "m",
+    operation: "image-to-image",
+    prompt: "p",
+    aspectRatio: "16:9",
+    imageUrls: Array.from({ length: 20 }, (_, i) => `https://x/${i}.png`),
+  });
+  const body = JSON.parse(calls[0]!.init.body ?? "{}") as {
+    input: { input_urls: string[] };
+  };
+  assert.equal(body.input.input_urls.length, 16);
 });

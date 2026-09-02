@@ -44,6 +44,8 @@ export async function processHeadshotGenerationJob(
   if (job.data.type !== "generate-image") return;
 
   const { headshotImageId } = job.data;
+  const isFinalAttempt =
+    job.attemptsMade + 1 >= HEADSHOT_GENERATION_MAX_ATTEMPTS;
 
   const image = await db.headshotImage.findUnique({
     where: { id: headshotImageId },
@@ -59,14 +61,29 @@ export async function processHeadshotGenerationJob(
 
   if (image.status === "COMPLETED") {
     if (image.creditState === "FROZEN") {
-      await chargeForImage(
-        image.id,
-        image.userId,
-        image.batchId,
-        image.position,
-      );
-      await recomputeBatchStatus(image.batchId);
+      try {
+        await chargeForImage(
+          image.id,
+          image.userId,
+          image.batchId,
+          image.position,
+        );
+      } catch (error) {
+        // Let BullMQ retry while attempts remain.
+        if (!isFinalAttempt) throw error;
+
+        // Out of attempts. The image is already delivered, so the only choice
+        // left is which way to be wrong. Leaving the batch stuck in PROCESSING
+        // is worse than an uncharged image: it never completes, and it counts
+        // against the user's concurrent-batch limit forever. The reservation
+        // releases itself at the Velobase TTL.
+        logger.error(
+          { err: error, headshotImageId: image.id, batchId: image.batchId },
+          "Could not charge for a delivered headshot; leaving the credit reserved",
+        );
+      }
     }
+    await recomputeBatchStatus(image.batchId);
     return;
   }
 
@@ -104,9 +121,6 @@ export async function processHeadshotGenerationJob(
   }
 
   await markImageProcessing(image.id);
-
-  const isFinalAttempt =
-    job.attemptsMade + 1 >= HEADSHOT_GENERATION_MAX_ATTEMPTS;
 
   try {
     if (image.forcedFailure && isForcedFailureAllowed()) {
@@ -156,11 +170,25 @@ export async function processHeadshotGenerationJob(
       );
     }
 
-    const asset = finished.assets.find((item) => item.status === "succeeded");
+    let asset = finished.assets.find((item) => item.status === "succeeded");
+
+    // The image-generation worker stores the rendered file after the task
+    // reports success, so a task can briefly read as succeeded with no asset
+    // attached. Re-read for a few seconds before concluding anything.
+    for (let attempt = 0; attempt < 4 && !asset?.publicUrl; attempt += 1) {
+      await wait(1500);
+      const refreshed = await imageGeneration.getTask(task.id, {
+        userId: image.userId,
+      });
+      asset = refreshed?.assets.find((item) => item.status === "succeeded");
+    }
+
     if (!asset?.publicUrl) {
       throw new HeadshotGenerationError(
         "Image generation finished without a usable image",
-        { permanent: true },
+        // Not permanent: the asset may still be landing, so allow a retry
+        // rather than refunding a render that actually worked.
+        { permanent: false },
       );
     }
 
@@ -231,6 +259,10 @@ async function chargeForImage(
 ): Promise<void> {
   await consumeImageCredit({ userId, imageId, batchId, position });
   await markCreditConsumed(imageId);
+}
+
+function wait(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 /** Distinguishes "do not bother retrying" from ordinary transient failures. */

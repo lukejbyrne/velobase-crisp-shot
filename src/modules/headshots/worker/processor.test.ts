@@ -50,6 +50,8 @@ let waitResult: {
 let emittedEvents: string[] = [];
 let recomputeCalls = 0;
 let allowForcedFailure = false;
+let consumeShouldFail = false;
+let recomputeShouldFail = false;
 
 mockModule(new URL("../../../env.js", import.meta.url).href, {
   namedExports: {
@@ -87,6 +89,7 @@ mockModule(new URL("../server/credits.ts", import.meta.url).href, {
       return { frozen: true, isIdempotentReplay: false };
     },
     consumeImageCredit: async () => {
+      if (consumeShouldFail) throw new Error("velobase unavailable");
       consumeCalls += 1;
       return { isIdempotentReplay: false };
     },
@@ -142,6 +145,7 @@ mockModule(new URL("../server/service.ts", import.meta.url).href, {
       image.storageKey = params.storageKey ?? null;
     },
     settleImageFailure: async (params: { message: string }) => {
+      if (image.status === "COMPLETED") return;
       image.status = "FAILED";
       image.errorMessage = params.message;
       if (image.creditState === "FROZEN") {
@@ -156,6 +160,10 @@ mockModule(new URL("../server/service.ts", import.meta.url).href, {
       }
     },
     recomputeBatchStatus: async () => {
+      if (recomputeShouldFail) {
+        recomputeShouldFail = false;
+        throw new Error("transient database error");
+      }
       recomputeCalls += 1;
     },
   },
@@ -184,6 +192,7 @@ mockModule(
           return { id: "task_1" };
         },
         waitForTask: async () => waitResult,
+        getTask: async () => waitResult,
       },
     },
   },
@@ -221,6 +230,8 @@ function reset(overrides: Partial<FakeImage> = {}) {
   emittedEvents = [];
   recomputeCalls = 0;
   allowForcedFailure = false;
+  consumeShouldFail = false;
+  recomputeShouldFail = false;
   waitResult = {
     status: "succeeded",
     assets: [
@@ -349,11 +360,13 @@ void test("the final attempt settles a transient failure instead of retrying for
   assert.equal(unfreezeCalls, 1);
 });
 
-void test("a succeeded task with no usable asset is treated as a failure and refunded", async () => {
+void test("a task with no usable asset is refunded once retries are exhausted", async () => {
   reset();
   waitResult = { status: "succeeded", assets: [{ status: "failed" }] };
 
-  await processHeadshotGenerationJob(makeJob(0));
+  // Only on the final attempt: earlier attempts re-poll, because the asset may
+  // still be landing and refunding a good render would be worse.
+  await processHeadshotGenerationJob(makeJob(2));
 
   assert.equal(image.status, "FAILED");
   assert.equal(image.creditState, "UNFROZEN");
@@ -400,4 +413,41 @@ void test("an image whose credit was already settled is skipped rather than re-b
   assert.equal(consumeCalls, 0);
   assert.equal(unfreezeCalls, 0);
   assert.equal(recomputeCalls, 1);
+});
+
+void test("a completed image whose charge keeps failing still unwedges its batch", async () => {
+  reset({ status: "COMPLETED", creditState: "FROZEN" });
+  consumeShouldFail = true;
+
+  // Not the final attempt: rethrow so BullMQ retries.
+  await assert.rejects(processHeadshotGenerationJob(makeJob(0)));
+  assert.equal(recomputeCalls, 0);
+
+  // Final attempt: give up on charging, but never leave the batch PROCESSING.
+  await processHeadshotGenerationJob(makeJob(2));
+  assert.equal(recomputeCalls, 1);
+  assert.equal(image.status, "COMPLETED");
+});
+
+void test("a delivered image is never flipped to failed by a later error", async () => {
+  reset();
+  // Succeed the render, then fail the bookkeeping that follows it.
+  recomputeShouldFail = true;
+
+  await processHeadshotGenerationJob(makeJob(2));
+
+  // The picture exists and was charged for; it must remain visible.
+  assert.equal(image.status, "COMPLETED");
+  assert.equal(image.creditState, "CONSUMED");
+});
+
+void test("a succeeded task with a late asset is retried, not refunded", async () => {
+  reset();
+  waitResult = { status: "succeeded", assets: [] };
+
+  // Never permanent: refunding here would discard a render that worked.
+  await assert.rejects(processHeadshotGenerationJob(makeJob(0)));
+  assert.equal(image.status, "PROCESSING");
+  assert.equal(image.creditState, "FROZEN");
+  assert.equal(unfreezeCalls, 0);
 });

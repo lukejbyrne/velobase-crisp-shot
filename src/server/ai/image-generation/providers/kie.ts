@@ -17,6 +17,10 @@ const logger = createLogger("kie-provider");
 
 const KIE_PROVIDER_ID = "kie" as const;
 const MAX_ATTEMPTS = 3;
+const MAX_INPUT_URLS = 16;
+
+/** Aspect ratios Kie documents as 1K-only. */
+const ONE_K_ONLY_RATIOS = new Set(["5:4", "4:5"]);
 
 /** Kie wraps every response in an envelope; `code` is its own status, not HTTP. */
 type KieEnvelope<T> = {
@@ -171,9 +175,22 @@ export class KieProvider implements ImageGenerationProviderAdapter {
     };
 
     if (input.aspectRatio) payload.aspect_ratio = input.aspectRatio;
-    // Kie expects uppercase resolution tokens (1K/2K/4K).
-    if (input.resolution) payload.resolution = input.resolution.toUpperCase();
-    if (input.imageUrls?.length) payload.input_urls = input.imageUrls;
+
+    // Kie couples resolution to aspect ratio and rejects the task at creation
+    // time when they disagree: an unset or "auto" ratio supports 1K only, and
+    // 1:1, 5:4 and 4:5 cannot produce 4K. Downgrading beats a failed batch,
+    // since the caller asked for a picture, not a specific pixel count.
+    if (input.resolution) {
+      payload.resolution = clampResolution(
+        input.resolution,
+        input.aspectRatio,
+      ).toUpperCase();
+    }
+
+    // Documented ceiling; sending more fails the request outright.
+    if (input.imageUrls?.length) {
+      payload.input_urls = input.imageUrls.slice(0, MAX_INPUT_URLS);
+    }
 
     return payload;
   }
@@ -256,6 +273,20 @@ export class KieProvider implements ImageGenerationProviderAdapter {
       providerRaw: lastError instanceof Error ? lastError.message : undefined,
     });
   }
+}
+
+/**
+ * Reduces a requested resolution to one Kie will accept for the given ratio.
+ * Exported for testing; the coupling is a documented Kie constraint, not ours.
+ */
+export function clampResolution(
+  resolution: "1k" | "2k" | "4k",
+  aspectRatio: string | undefined,
+): "1k" | "2k" | "4k" {
+  if (!aspectRatio || aspectRatio === "auto") return "1k";
+  if (ONE_K_ONLY_RATIOS.has(aspectRatio)) return "1k";
+  if (resolution === "4k" && aspectRatio === "1:1") return "2k";
+  return resolution;
 }
 
 /** Kie task states map onto the framework's status vocabulary. */

@@ -33,10 +33,13 @@ COPY --chown=worker:nodejs src/env.js ./src/env.js
 COPY --chown=worker:nodejs src/env-normalization.js ./src/env-normalization.js
 COPY --chown=worker:nodejs tsconfig.json ./
 COPY --chown=worker:nodejs public/data/disposable-domains.txt ./public/data/disposable-domains.txt
+COPY --chown=worker:nodejs docker-entrypoint.worker.sh ./
+# Do not rely on the host file mode surviving the build context.
+RUN chmod +x docker-entrypoint.worker.sh
 
 USER worker
 
 EXPOSE 3001
 
-# Start worker
-CMD ["node", "--import", "tsx", "src/workers/index.ts"]
+# Seed the database, then start the worker
+CMD ["./docker-entrypoint.worker.sh"]

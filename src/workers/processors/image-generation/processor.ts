@@ -6,7 +6,10 @@ import { appEvents } from "@/server/events/bus";
 import { storeGeneratedImage } from "@/server/ai/image-generation/storage";
 import { getImageGenerationProvider } from "@/server/ai/image-generation";
 import { imageGenerationEstimateInputSchema } from "@/server/ai/image-generation/validators";
-import type { ProviderPrediction } from "@/server/ai/image-generation/providers/types";
+import {
+  ImageGenerationProviderError,
+  type ProviderPrediction,
+} from "@/server/ai/image-generation/providers/types";
 import type { ImageGenerationJobData } from "@/workers/queues/image-generation.queue";
 import {
   PRISMA_TO_OPERATION,
@@ -62,32 +65,61 @@ export async function processImageGenerationJob(
   });
 
   let prediction: ProviderPrediction;
+  let completedPrediction: ProviderPrediction;
 
-  if (task.providerTaskId) {
-    prediction = await provider.getPrediction(
-      task.providerTaskId,
-      task.providerTaskUrl ?? undefined,
-    );
-  } else {
-    prediction = await provider.createPrediction(providerInput);
-    await db.imageGenerationTask.update({
-      where: { id: task.id },
-      data: {
-        providerTaskId: prediction.providerTaskId,
-        providerTaskUrl: prediction.providerTaskUrl,
-        providerRaw: toJson(prediction.providerRaw),
-      },
+  try {
+    if (task.providerTaskId) {
+      prediction = await provider.getPrediction(
+        task.providerTaskId,
+        task.providerTaskUrl ?? undefined,
+      );
+    } else {
+      prediction = await provider.createPrediction(providerInput);
+      await db.imageGenerationTask.update({
+        where: { id: task.id },
+        data: {
+          providerTaskId: prediction.providerTaskId,
+          providerTaskUrl: prediction.providerTaskUrl,
+          providerRaw: toJson(prediction.providerRaw),
+        },
+      });
+    }
+
+    await job.updateProgress(20);
+
+    completedPrediction = await waitForProviderCompletion({
+      taskId: task.id,
+      initialPrediction: prediction,
+      providerTaskUrl:
+        prediction.providerTaskUrl ?? task.providerTaskUrl ?? undefined,
     });
+  } catch (error) {
+    // Providers throw for unusable requests (bad model, no credit, malformed
+    // input) as well as for transient faults. Without this the task would sit
+    // at RUNNING forever and every caller waiting on it would block until its
+    // own timeout, reporting a timeout instead of the real reason.
+    const retryable =
+      error instanceof ImageGenerationProviderError
+        ? (error.details.retryable ?? false)
+        : true;
+    const attempts = job.opts?.attempts ?? 1;
+    const isFinalAttempt = job.attemptsMade + 1 >= attempts;
+
+    if (!retryable || isFinalAttempt) {
+      await markFailed({
+        taskId: task.id,
+        userId: task.userId,
+        provider: providerId,
+        model: task.model,
+        status: "failed",
+        errorMessage:
+          error instanceof Error ? error.message : "Image generation failed",
+        providerRaw: undefined,
+      });
+    }
+
+    throw error;
   }
-
-  await job.updateProgress(20);
-
-  const completedPrediction = await waitForProviderCompletion({
-    taskId: task.id,
-    initialPrediction: prediction,
-    providerTaskUrl:
-      prediction.providerTaskUrl ?? task.providerTaskUrl ?? undefined,
-  });
 
   if (completedPrediction.status !== "succeeded") {
     await markFailed({
@@ -230,10 +262,10 @@ async function waitForProviderCompletion(params: {
       data: {
         providerRaw: toJson(prediction.providerRaw),
         providerTaskUrl: prediction.providerTaskUrl,
-        status:
-          prediction.status === "queued"
-            ? "RUNNING"
-            : STATUS_TO_PRISMA[prediction.status],
+        // Deliberately never terminal here. The caller commits SUCCEEDED only
+        // after the generated assets are stored, so a reader can never observe
+        // a SUCCEEDED task whose assets have not been written yet.
+        status: "RUNNING",
       },
     });
 

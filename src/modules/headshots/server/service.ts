@@ -434,6 +434,18 @@ export async function settleImageFailure(params: {
   });
   if (!image) return;
 
+  // A delivered image is never retracted by a later bookkeeping error. Flipping
+  // it to FAILED here would hide a picture the user can see they received, and
+  // if its credit was already consumed they would have paid for nothing.
+  // Settling the billing half is the processor's COMPLETED branch.
+  if (image.status === "COMPLETED") {
+    logger.warn(
+      { imageId: image.id, reason: params.message },
+      "Ignoring failure settlement for an image that already completed",
+    );
+    return;
+  }
+
   if (image.status !== "FAILED") {
     await db.headshotImage.update({
       where: { id: params.imageId },
