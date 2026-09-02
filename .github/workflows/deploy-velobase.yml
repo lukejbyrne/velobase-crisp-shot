@@ -37,6 +37,11 @@ jobs:
         run: pnpm build
         env:
           SKIP_ENV_VALIDATION: "true"
+          # NEXT_PUBLIC_* values are inlined into the bundle at build time, so
+          # setting them only as runtime env in Velobase has no effect on the
+          # rendered page. Override via repository variables if these change.
+          NEXT_PUBLIC_APP_NAME: ${{ vars.NEXT_PUBLIC_APP_NAME || 'CrispShot' }}
+          NEXT_PUBLIC_SUPPORT_EMAIL: ${{ vars.NEXT_PUBLIC_SUPPORT_EMAIL }}
 
       - name: Create empty .env for Docker builds
         run: touch .env

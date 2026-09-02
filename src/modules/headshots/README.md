@@ -156,6 +156,20 @@ All procedures are on the `headshots` tRPC router.
 Credit balance and history in the UI come from the framework's own
 `billing.getBalance` and `billing.getRecords`.
 
+## Deployment
+
+Live at **https://crisp-shot.velobase.app** (verified against `/healthz`, which
+returns this app's JSON rather than the platform's placeholder).
+
+Note that `.velobase/config.json` in this repo is stale template metadata: it
+names `velobase/velobase-harness` and a different tenant id than the one the
+deploy actually pushes to. Nothing reads that file, but do not trust its `url`.
+
+`NEXT_PUBLIC_*` values are inlined into the client bundle when `pnpm build`
+runs in CI, so setting them only as runtime environment in Velobase Cloud has
+no effect on the rendered page. They are set in the deploy workflow's build
+step and can be overridden with repository variables.
+
 ## Configuration
 
 | Variable | Default | Purpose |
