@@ -133,10 +133,101 @@
   },
   "landing": {
     "hero": {
-      "titleLine1": "Open-Source AI SaaS",
-      "titleLine2": "Boilerplate",
-      "subtitle": "A free framework with auth, billing, credits, payments, AI chat, workers, attribution, and anti-abuse built in.",
-      "subtitleAccent": "Bring your AI workflow. Keep the SaaS infrastructure."
+      "eyebrow": "AI headshots — no studio, no booking",
+      "titleLine1": "Look like you hired",
+      "titleLine2": "a photographer",
+      "subtitle": "Upload one clear portrait. CrispShot returns four studio-grade headshots for your profile, your pitch deck or your next application.",
+      "subtitleAccent": "Usually done before your coffee goes cold.",
+      "primaryCta": "Create my headshots",
+      "secondaryCta": "See pricing",
+      "signedOutCta": "Start with a free account",
+      "trust": "One credit per finished photo. If a generation fails, the credit goes straight back."
+    },
+    "beforeAfter": {
+      "title": "One portrait in. Four headshots out.",
+      "subtitle": "Same face, same person. Only the lighting, wardrobe and framing change.",
+      "before": "Your upload",
+      "after": "CrispShot",
+      "beforeCaption": "Phone snap, mixed lighting, busy background",
+      "afterCaption": "Studio key light, clean backdrop, head-and-shoulders crop",
+      "note": "Illustrative comparison. Your own results are private to your account."
+    },
+    "how": {
+      "title": "Three steps, about two minutes",
+      "step1": {
+        "title": "Upload one portrait",
+        "description": "A clear, front-facing photo where your face is well lit. A phone camera is plenty."
+      },
+      "step2": {
+        "title": "Choose a style",
+        "description": "Corporate, founder, LinkedIn classic, editorial, outdoor or monochrome."
+      },
+      "step3": {
+        "title": "Download the keepers",
+        "description": "Four variations arrive in your private gallery. Download the ones you like."
+      }
+    },
+    "styles": {
+      "title": "Six professional looks",
+      "subtitle": "Every style keeps your face exactly as it is. Only the presentation changes."
+    },
+    "pricing": {
+      "title": "Pay for photos, not a subscription",
+      "subtitle": "Buy credits once. One credit becomes one finished headshot, and credits never expire.",
+      "perHeadshot": "{price} per headshot",
+      "batches": "{count} batches of four",
+      "cta": "Buy credits",
+      "ctaSignedOut": "Create an account to buy",
+      "loading": "Loading packs…",
+      "empty": "Credit packs are not configured yet.",
+      "footnote": "Prices in {currency}. Payments are handled by Stripe — we never see your card details."
+    },
+    "credits": {
+      "title": "You only pay for images that work",
+      "subtitle": "Every image in a batch is its own transaction, so one bad render never costs you the other three.",
+      "freeze": {
+        "title": "Frozen",
+        "description": "One credit is reserved the moment a batch starts. It cannot be spent anywhere else."
+      },
+      "consume": {
+        "title": "Used",
+        "description": "The reserved credit is charged only once the finished image lands in your gallery."
+      },
+      "unfreeze": {
+        "title": "Returned",
+        "description": "If a generation fails or is cancelled, the reservation is released automatically."
+      }
+    },
+    "faq": {
+      "title": "Questions people actually ask",
+      "q1": {
+        "question": "Will it still look like me?",
+        "answer": "That is the whole design goal. Every prompt instructs the model to keep your face shape, skin tone, hair and apparent age unchanged, and explicitly forbids slimming or beautifying. If a result drifts, discard it and generate another — you only pay for images you receive."
+      },
+      "q2": {
+        "question": "What makes a good upload?",
+        "answer": "One person, face clearly visible, even light on your face, no sunglasses or heavy shadow, and a reasonably sharp phone photo. Squinting into the sun or a dark bar selfie will produce a worse result."
+      },
+      "q3": {
+        "question": "What happens if a generation fails?",
+        "answer": "The credit reserved for that image is released back to your balance automatically, and the failure is shown against that specific image. The other three keep going."
+      },
+      "q4": {
+        "question": "Who can see my photos?",
+        "answer": "Only you. Your uploads and results sit in your own account, and downloads are served through short-lived links tied to your session."
+      },
+      "q5": {
+        "question": "Do credits expire?",
+        "answer": "No. Buy a pack now, use it whenever you next need a headshot."
+      }
+    },
+    "finalCta": {
+      "title": "Your next profile photo is four minutes away",
+      "subtitle": "No studio, no rescheduling, no awkward small talk with a photographer.",
+      "cta": "Create my headshots"
+    },
+    "footer": {
+      "tagline": "Professional headshots from a single photo."
     }
   },
   "dashboard": {
@@ -1037,6 +1128,124 @@
       "perPeriodCredits": "Per-period Credits (monthly free allowance)",
       "save": "Save",
       "fullMetadata": "Full Metadata"
+    }
+  },
+  "headshots": {
+    "nav": {
+      "studio": "Studio",
+      "gallery": "Gallery",
+      "credits": "Credits"
+    },
+    "styles": {
+      "corporate": "Corporate",
+      "startupFounder": "Startup founder",
+      "linkedinClassic": "LinkedIn classic",
+      "creative": "Editorial",
+      "outdoorNatural": "Outdoor natural",
+      "monochrome": "Monochrome"
+    },
+    "studio": {
+      "title": "Headshot studio",
+      "subtitle": "Upload a portrait, pick a style, and generate four headshots.",
+      "stepUpload": "Upload",
+      "stepStyle": "Style",
+      "stepGenerate": "Generate",
+      "disabledTitle": "Generation is not configured",
+      "disabledBody": "This deployment has no image generation provider configured yet, so new batches cannot be started."
+    },
+    "upload": {
+      "title": "Your portrait",
+      "prompt": "Drop a photo here, or click to choose one",
+      "hint": "JPEG, PNG, WebP or HEIC · up to {size}MB · one person, face clearly lit",
+      "change": "Choose a different photo",
+      "uploading": "Uploading…",
+      "ready": "Photo ready",
+      "errorType": "That file type is not supported. Use JPEG, PNG, WebP or HEIC.",
+      "errorSize": "That image is larger than {size}MB.",
+      "errorGeneric": "Upload failed. Please try again."
+    },
+    "style": {
+      "title": "Choose a style",
+      "subtitle": "Each batch renders four variations of the style you pick."
+    },
+    "generate": {
+      "title": "Generate",
+      "cost": "This batch costs {credits} credits — one per image.",
+      "balance": "You have {available} credits available.",
+      "cta": "Generate {count} headshots",
+      "pending": "Starting…",
+      "needCredits": "You need {required} credits to start a batch. You have {available}.",
+      "buyCredits": "Buy credits",
+      "needPhoto": "Upload a portrait first.",
+      "needStyle": "Pick a style first.",
+      "forceFailureLabel": "Force one image to fail (development only)",
+      "forceFailureHint": "Demonstrates the freeze, consume and unfreeze path: three images succeed and one is refunded."
+    },
+    "batch": {
+      "title": "This batch",
+      "empty": "No batch yet. Upload a portrait to begin.",
+      "progress": "{completed} of {total} done",
+      "startAnother": "Start another batch",
+      "viewGallery": "Open gallery",
+      "styleLabel": "Style",
+      "creditLabel": "Credit"
+    },
+    "status": {
+      "QUEUED": "Queued",
+      "PROCESSING": "Generating",
+      "COMPLETED": "Completed",
+      "FAILED": "Failed",
+      "CANCELLED": "Cancelled"
+    },
+    "creditState": {
+      "NONE": "Not reserved",
+      "FROZEN": "Frozen",
+      "CONSUMED": "Used",
+      "UNFROZEN": "Returned"
+    },
+    "gallery": {
+      "title": "Your headshots",
+      "subtitle": "Every image you have successfully generated. Private to your account.",
+      "empty": "Nothing here yet. Generate your first batch in the studio.",
+      "emptyCta": "Open the studio",
+      "download": "Download",
+      "downloading": "Preparing…",
+      "downloadFailed": "Could not prepare that download. Try again.",
+      "loadMore": "Load more",
+      "batchesTitle": "Recent batches"
+    },
+    "credits": {
+      "title": "Credits",
+      "subtitle": "One credit becomes one finished headshot. Credits never expire.",
+      "available": "Available",
+      "availableHint": "Ready to spend",
+      "frozen": "Frozen",
+      "frozenHint": "Reserved by batches in progress",
+      "used": "Used",
+      "usedHint": "Spent on finished headshots",
+      "total": "Lifetime total",
+      "historyTitle": "Transaction history",
+      "historyEmpty": "No credit activity yet.",
+      "buyTitle": "Top up",
+      "loadMore": "Load more",
+      "columnDate": "Date",
+      "columnType": "Type",
+      "columnAmount": "Amount",
+      "columnDescription": "Description",
+      "operation": {
+        "GRANT": "Purchased",
+        "FREEZE": "Reserved",
+        "CONSUME": "Used",
+        "UNFREEZE": "Returned",
+        "AUTO_UNFREEZE": "Auto-returned",
+        "AUTO_CONSUME": "Auto-used",
+        "UNDEFINED": "Adjustment"
+      }
+    },
+    "errors": {
+      "insufficientCredits": "You do not have enough credits for another batch.",
+      "tooManyBatches": "You already have batches running. Wait for one to finish.",
+      "generic": "Something went wrong. Please try again."
     }
   }
 }

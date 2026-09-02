@@ -92,6 +92,27 @@ export const env = createEnv({
       .regex(/^\d+$/)
       .optional()
       .transform((val) => (val ? parseInt(val, 10) : 30000)),
+    HEADSHOT_IMAGE_PROVIDER: z.string().optional().default("wavespeed"),
+    HEADSHOT_IMAGE_MODEL: z
+      .string()
+      .optional()
+      .default("openai/gpt-image-2/edit"),
+    HEADSHOT_IMAGE_RESOLUTION: z.enum(["1k", "2k", "4k"]).optional(),
+    HEADSHOT_IMAGE_ASPECT_RATIO: z.string().optional().default("1:1"),
+    HEADSHOT_BATCH_SIZE: z
+      .string()
+      .regex(/^\d+$/)
+      .optional()
+      .transform((val) => (val ? parseInt(val, 10) : 4)),
+    HEADSHOT_FREEZE_TTL_SECONDS: z
+      .string()
+      .regex(/^\d+$/)
+      .optional()
+      .transform((val) => (val ? parseInt(val, 10) : 86400)),
+    HEADSHOT_DEV_ALLOW_FORCED_FAILURE: z
+      .enum(["true", "false"])
+      .optional()
+      .transform((val) => val === "true"),
     CDN_BASE_URL: z.string().url().optional(),
     STORAGE_PROVIDER: z
       .enum(["aws", "aliyun", "gcs", "minio", "r2", "filesystem"])
@@ -222,6 +243,7 @@ export const env = createEnv({
     AI_CHAT_MODE: z.enum(["off", "auto", "on"]).optional(),
     VELOBASE_GATEWAY_MODE: z.enum(["off", "auto", "on"]).optional(),
     IMAGE_GENERATION_MODE: z.enum(["off", "auto", "on"]).optional(),
+    HEADSHOTS_MODE: z.enum(["off", "auto", "on"]).optional(),
     NODE_ENV: z
       .enum(["development", "test", "production"])
       .default("development"),
@@ -312,6 +334,14 @@ export const env = createEnv({
     WAVESPEED_API_KEY: process.env.WAVESPEED_API_KEY,
     WAVESPEED_BASE_URL: process.env.WAVESPEED_BASE_URL,
     WAVESPEED_REQUEST_TIMEOUT_MS: process.env.WAVESPEED_REQUEST_TIMEOUT_MS,
+    HEADSHOT_IMAGE_PROVIDER: process.env.HEADSHOT_IMAGE_PROVIDER,
+    HEADSHOT_IMAGE_MODEL: process.env.HEADSHOT_IMAGE_MODEL,
+    HEADSHOT_IMAGE_RESOLUTION: process.env.HEADSHOT_IMAGE_RESOLUTION,
+    HEADSHOT_IMAGE_ASPECT_RATIO: process.env.HEADSHOT_IMAGE_ASPECT_RATIO,
+    HEADSHOT_BATCH_SIZE: process.env.HEADSHOT_BATCH_SIZE,
+    HEADSHOT_FREEZE_TTL_SECONDS: process.env.HEADSHOT_FREEZE_TTL_SECONDS,
+    HEADSHOT_DEV_ALLOW_FORCED_FAILURE:
+      process.env.HEADSHOT_DEV_ALLOW_FORCED_FAILURE,
     CDN_BASE_URL: process.env.CDN_BASE_URL,
     STORAGE_PROVIDER: process.env.STORAGE_PROVIDER,
     STORAGE_REGION: process.env.STORAGE_REGION,
@@ -399,6 +429,7 @@ export const env = createEnv({
     AI_CHAT_MODE: process.env.AI_CHAT_MODE,
     VELOBASE_GATEWAY_MODE: process.env.VELOBASE_GATEWAY_MODE,
     IMAGE_GENERATION_MODE: process.env.IMAGE_GENERATION_MODE,
+    HEADSHOTS_MODE: process.env.HEADSHOTS_MODE,
     NODE_ENV: process.env.NODE_ENV,
     NEXT_PUBLIC_APP_ENV: process.env.NEXT_PUBLIC_APP_ENV,
     NEXT_PUBLIC_APP_NAME: process.env.NEXT_PUBLIC_APP_NAME,

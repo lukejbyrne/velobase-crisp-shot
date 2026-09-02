@@ -9,6 +9,7 @@
 | 模块 | 用途 |
 | --- | --- |
 | [AI Chat](./ai-chat/README.md) | 流式聊天、Agent 配置、工具调用和聊天 UI 底座 |
+| [形象照模块（CrispShot）](../../../src/modules/headshots/README.md) | AI 形象照生成，按张冻结、扣除与退回积分 |
 | [示例模块](../../../src/modules/example/README.md) | 添加产品特定模块时可参考的目录结构 |
 
 ## 规则

@@ -32,6 +32,7 @@ interface HeaderProps {
 
 export function Header({ variant = "default", className }: HeaderProps) {
   const t = useTranslations("nav");
+  const tProduct = useTranslations("headshots.nav");
   const { data: session } = useSession();
   const { setLoginModalOpen } = useAuthStore();
   const router = useRouter();
@@ -45,7 +46,8 @@ export function Header({ variant = "default", className }: HeaderProps) {
   });
 
   const credits = billingStatus?.creditsBalance ?? 0;
-  const isLowBalance = credits < 500;
+  // One batch costs four credits, so "low" means "cannot start another batch".
+  const isLowBalance = credits < 4;
 
   const handleLogout = () => {
     void logout({ callbackUrl: "/", source: "header" });
@@ -87,11 +89,27 @@ export function Header({ variant = "default", className }: HeaderProps) {
           </div>
 
           <div className="flex items-center gap-4">
+            {session && (
+              <nav className="hidden items-center gap-1 sm:flex">
+                <Link
+                  href="/studio"
+                  className="rounded-full px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                >
+                  {tProduct("studio")}
+                </Link>
+                <Link
+                  href="/gallery"
+                  className="rounded-full px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                >
+                  {tProduct("gallery")}
+                </Link>
+              </nav>
+            )}
             <LocaleSwitcher />
             <ThemeToggle />
             {session ? (
               <>
-                <Link href="/pricing">
+                <Link href="/credits" aria-label={tProduct("credits")}>
                   <div className={`
                     flex items-center gap-2 px-3 py-1.5 rounded-full border backdrop-blur-sm transition-all
                     ${isLowBalance
@@ -132,15 +150,15 @@ export function Header({ variant = "default", className }: HeaderProps) {
                     </DropdownMenuLabel>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem asChild>
-                      <Link href="/profile" className="cursor-pointer">
+                      <Link href="/account/profile" className="cursor-pointer">
                         <User className="mr-2 h-4 w-4" />
                         {t("profile")}
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
-                      <Link href="/history" className="cursor-pointer">
+                      <Link href="/gallery" className="cursor-pointer">
                         <History className="mr-2 h-4 w-4" />
-                        {t("history")}
+                        {tProduct("gallery")}
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>

@@ -8,6 +8,7 @@ import { adminRouter } from "@/server/admin/routers";
 import { accountRouter } from "@/server/api/routers/account";
 import { notificationRouter } from "@/server/api/routers/notification";
 import { exampleRouter } from "@/modules/example/server/router";
+import { headshotsRouter } from "@/modules/headshots/server/router";
 import { agentRouter } from "@/server/api/routers/agent";
 import { userAgentRouter } from "@/server/api/routers/user-agent";
 import { conversationRouter } from "@/server/api/routers/conversation";
@@ -39,6 +40,9 @@ export const appRouter = createTRPCRouter({
   notification: notificationRouter,
   account: accountRouter,
   example: exampleRouter,
+
+  // CrispShot headshots module
+  headshots: headshotsRouter,
 
   // AI Chat module
   agent: agentRouter,

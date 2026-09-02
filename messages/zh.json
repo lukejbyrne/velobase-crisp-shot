@@ -133,10 +133,101 @@
   },
   "landing": {
     "hero": {
-      "titleLine1": "Build Your AI App",
-      "titleLine2": "In Record Time",
-      "subtitle": "A production-ready AI SaaS framework with auth, billing, payments, and AI chat built in.",
-      "subtitleAccent": "Focus on your core feature. We handle the rest."
+      "eyebrow": "AI 形象照 — 无需影棚，无需预约",
+      "titleLine1": "看起来像是请了",
+      "titleLine2": "专业摄影师",
+      "subtitle": "上传一张清晰的正面照，CrispShot 会生成四张影棚级形象照，可用于社交主页、商业提案或求职简历。",
+      "subtitleAccent": "通常在一杯咖啡凉掉之前就完成了。",
+      "primaryCta": "生成我的形象照",
+      "secondaryCta": "查看价格",
+      "signedOutCta": "免费注册开始",
+      "trust": "每张成品照片消耗 1 个积分。生成失败会立即退回积分。"
+    },
+    "beforeAfter": {
+      "title": "一张原图，四张成片",
+      "subtitle": "同一张脸，同一个人。改变的只有光线、着装和构图。",
+      "before": "你的原图",
+      "after": "CrispShot",
+      "beforeCaption": "手机随手拍，光线杂乱，背景凌乱",
+      "afterCaption": "影棚主光，干净背景，半身构图",
+      "note": "示意对比图。你自己的生成结果仅在你的账户中可见。"
+    },
+    "how": {
+      "title": "三步，大约两分钟",
+      "step1": {
+        "title": "上传一张正面照",
+        "description": "面部光线充足、正对镜头的清晰照片即可，手机拍摄完全够用。"
+      },
+      "step2": {
+        "title": "选择一种风格",
+        "description": "商务、创业者、经典职场、杂志感、户外自然或黑白。"
+      },
+      "step3": {
+        "title": "下载满意的成片",
+        "description": "四张变体会进入你的私人图库，挑喜欢的下载即可。"
+      }
+    },
+    "styles": {
+      "title": "六种专业风格",
+      "subtitle": "每种风格都会完整保留你的五官，改变的只是呈现方式。"
+    },
+    "pricing": {
+      "title": "为照片付费，而不是订阅",
+      "subtitle": "一次性购买积分。1 个积分换 1 张成品形象照，积分永不过期。",
+      "perHeadshot": "每张 {price}",
+      "batches": "{count} 组（每组四张）",
+      "cta": "购买积分",
+      "ctaSignedOut": "注册后购买",
+      "loading": "正在加载套餐…",
+      "empty": "尚未配置积分套餐。",
+      "footnote": "价格以 {currency} 计。支付由 Stripe 处理，我们不会接触你的卡片信息。"
+    },
+    "credits": {
+      "title": "只为成功的图片付费",
+      "subtitle": "同一组中的每张图片都是独立交易，一张失败不会影响另外三张。",
+      "freeze": {
+        "title": "已冻结",
+        "description": "任务开始时即冻结 1 个积分，期间无法用于其他用途。"
+      },
+      "consume": {
+        "title": "已使用",
+        "description": "只有当成片进入你的图库后，冻结的积分才会真正扣除。"
+      },
+      "unfreeze": {
+        "title": "已退回",
+        "description": "如果生成失败或被取消，冻结的积分会自动解冻退回。"
+      }
+    },
+    "faq": {
+      "title": "大家最常问的问题",
+      "q1": {
+        "question": "生成结果还像我本人吗？",
+        "answer": "这正是我们的设计目标。每条提示词都要求模型保持你的脸型、肤色、发型和年龄感不变，并明确禁止瘦脸或美颜。如果某张结果偏离，丢弃并重新生成即可 — 你只为收到的图片付费。"
+      },
+      "q2": {
+        "question": "什么样的原图效果最好？",
+        "answer": "画面中只有你一个人、面部清晰可见、光线均匀、没有墨镜或浓重阴影，手机拍摄的清晰照片即可。逆光眯眼或昏暗环境的自拍效果会明显变差。"
+      },
+      "q3": {
+        "question": "生成失败会怎样？",
+        "answer": "为该图片冻结的积分会自动退回余额，失败原因会标注在这张图片上，其余三张继续生成。"
+      },
+      "q4": {
+        "question": "谁能看到我的照片？",
+        "answer": "只有你自己。上传与生成结果都保存在你的账户中，下载通过与登录状态绑定的短期链接提供。"
+      },
+      "q5": {
+        "question": "积分会过期吗？",
+        "answer": "不会。现在购买，下次需要形象照时再用也可以。"
+      }
+    },
+    "finalCta": {
+      "title": "你的下一张profile照片，只差四分钟",
+      "subtitle": "不用订影棚，不用改档期，也不用和摄影师尬聊。",
+      "cta": "生成我的形象照"
+    },
+    "footer": {
+      "tagline": "一张照片，生成专业形象照。"
     }
   },
   "dashboard": {
@@ -1037,6 +1128,124 @@
       "perPeriodCredits": "周期赠送积分（每月免费额度）",
       "save": "保存",
       "fullMetadata": "完整 Metadata"
+    }
+  },
+  "headshots": {
+    "nav": {
+      "studio": "工作台",
+      "gallery": "图库",
+      "credits": "积分"
+    },
+    "styles": {
+      "corporate": "商务",
+      "startupFounder": "创业者",
+      "linkedinClassic": "经典职场",
+      "creative": "杂志感",
+      "outdoorNatural": "户外自然",
+      "monochrome": "黑白"
+    },
+    "studio": {
+      "title": "形象照工作台",
+      "subtitle": "上传照片，选择风格，生成四张形象照。",
+      "stepUpload": "上传",
+      "stepStyle": "风格",
+      "stepGenerate": "生成",
+      "disabledTitle": "尚未配置生成服务",
+      "disabledBody": "当前部署还没有配置图像生成服务商，因此无法启动新任务。"
+    },
+    "upload": {
+      "title": "你的照片",
+      "prompt": "将照片拖到这里，或点击选择",
+      "hint": "JPEG、PNG、WebP 或 HEIC · 最大 {size}MB · 单人、面部光线清晰",
+      "change": "换一张照片",
+      "uploading": "上传中…",
+      "ready": "照片已就绪",
+      "errorType": "不支持该文件类型，请使用 JPEG、PNG、WebP 或 HEIC。",
+      "errorSize": "图片超过 {size}MB。",
+      "errorGeneric": "上传失败，请重试。"
+    },
+    "style": {
+      "title": "选择风格",
+      "subtitle": "每次任务会生成所选风格的四张变体。"
+    },
+    "generate": {
+      "title": "生成",
+      "cost": "本次任务消耗 {credits} 个积分 — 每张图片 1 个。",
+      "balance": "你当前有 {available} 个可用积分。",
+      "cta": "生成 {count} 张形象照",
+      "pending": "正在启动…",
+      "needCredits": "启动一次任务需要 {required} 个积分，你目前有 {available} 个。",
+      "buyCredits": "购买积分",
+      "needPhoto": "请先上传照片。",
+      "needStyle": "请先选择风格。",
+      "forceFailureLabel": "强制其中一张失败（仅开发环境）",
+      "forceFailureHint": "用于演示冻结、扣除与解冻流程：三张成功，一张退回积分。"
+    },
+    "batch": {
+      "title": "本次任务",
+      "empty": "还没有任务。上传照片即可开始。",
+      "progress": "已完成 {completed} / {total}",
+      "startAnother": "再来一组",
+      "viewGallery": "打开图库",
+      "styleLabel": "风格",
+      "creditLabel": "积分"
+    },
+    "status": {
+      "QUEUED": "排队中",
+      "PROCESSING": "生成中",
+      "COMPLETED": "已完成",
+      "FAILED": "已失败",
+      "CANCELLED": "已取消"
+    },
+    "creditState": {
+      "NONE": "未冻结",
+      "FROZEN": "已冻结",
+      "CONSUMED": "已使用",
+      "UNFROZEN": "已退回"
+    },
+    "gallery": {
+      "title": "我的形象照",
+      "subtitle": "所有成功生成的图片，仅你本人可见。",
+      "empty": "这里还是空的，去工作台生成第一组吧。",
+      "emptyCta": "打开工作台",
+      "download": "下载",
+      "downloading": "准备中…",
+      "downloadFailed": "无法准备下载，请重试。",
+      "loadMore": "加载更多",
+      "batchesTitle": "最近的任务"
+    },
+    "credits": {
+      "title": "积分",
+      "subtitle": "1 个积分换 1 张成品形象照，积分永不过期。",
+      "available": "可用",
+      "availableHint": "可立即使用",
+      "frozen": "冻结中",
+      "frozenHint": "被进行中的任务预留",
+      "used": "已使用",
+      "usedHint": "已用于生成成片",
+      "total": "累计总额",
+      "historyTitle": "交易记录",
+      "historyEmpty": "暂无积分记录。",
+      "buyTitle": "充值",
+      "loadMore": "加载更多",
+      "columnDate": "时间",
+      "columnType": "类型",
+      "columnAmount": "数量",
+      "columnDescription": "说明",
+      "operation": {
+        "GRANT": "购买",
+        "FREEZE": "冻结",
+        "CONSUME": "使用",
+        "UNFREEZE": "退回",
+        "AUTO_UNFREEZE": "自动退回",
+        "AUTO_CONSUME": "自动使用",
+        "UNDEFINED": "调整"
+      }
+    },
+    "errors": {
+      "insufficientCredits": "积分不足，无法再启动一次任务。",
+      "tooManyBatches": "你已有任务在进行中，请等待完成后再试。",
+      "generic": "出了点问题，请重试。"
     }
   }
 }

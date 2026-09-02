@@ -26,11 +26,17 @@ import { CookieBar } from "@/components/cookie-consent/cookie-bar";
 import { DeviceKeyEnsurer } from "@/components/device-key-ensurer";
 import { ServiceNoticeBanner } from "@/components/layout/service-notice-banner";
 
+import { APP_NAME } from "@/config/brand";
+
 const CONSENT_COOKIE = "app_cookie_consent";
 
 export const metadata: Metadata = {
-  title: "AI SaaS Framework",
-  description: "Production-ready AI SaaS framework with auth, billing, payments, and AI chat built in.",
+  title: {
+    default: `${APP_NAME} — professional AI headshots from one photo`,
+    template: `%s · ${APP_NAME}`,
+  },
+  description:
+    "Upload one clear portrait and get four studio-grade professional headshots. Pay per finished photo, with failed generations refunded automatically.",
   icons: [
     { rel: "icon", url: "/favicon.ico", sizes: "any" },
     { rel: "icon", url: "/favicon.svg", type: "image/svg+xml" },

@@ -197,6 +197,19 @@ export const MODULE_DEFINITIONS = [
         await import("@/workers/features/image-generation")
       ).getImageGenerationWorkerContributions(),
   },
+  {
+    id: "headshots",
+    kind: "feature",
+    label: "CrispShot Headshots",
+    modeEnv: "HEADSHOTS_MODE",
+    // The product is the image-generation pipeline plus billing, so it is only
+    // enabled when the provider it depends on is.
+    dependencies: ["image-generation"],
+    loadWorkerContributions: async () =>
+      (
+        await import("@/workers/features/headshots")
+      ).getHeadshotsWorkerContributions(),
+  },
 ] satisfies readonly ModuleDefinition[];
 
 const MODULE_ENV = {
@@ -215,6 +228,7 @@ const MODULE_ENV = {
   AI_CHAT_MODE: env.AI_CHAT_MODE,
   VELOBASE_GATEWAY_MODE: env.VELOBASE_GATEWAY_MODE,
   IMAGE_GENERATION_MODE: env.IMAGE_GENERATION_MODE,
+  HEADSHOTS_MODE: env.HEADSHOTS_MODE,
   SUPPORT_EMAIL_ADDRESS: env.SUPPORT_EMAIL_ADDRESS,
   SUPPORT_EMAIL_PASSWORD: env.SUPPORT_EMAIL_PASSWORD,
   SUPPORT_IMAP_HOST: env.SUPPORT_IMAP_HOST,
@@ -307,6 +321,9 @@ export const MODULES = {
     },
     imageGeneration: {
       enabled: isModuleEnabled("image-generation"),
+    },
+    headshots: {
+      enabled: isModuleEnabled("headshots"),
     },
   },
 } as const;

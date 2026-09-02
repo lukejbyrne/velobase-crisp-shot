@@ -67,6 +67,32 @@ export type EventPayload = {
     model: string;
     errorMessage?: string;
   };
+  "headshot_batch:created": {
+    batchId: string;
+    userId: string;
+    styleKey: string;
+    requestedCount: number;
+  };
+  "headshot_batch:completed": {
+    batchId: string;
+    userId: string;
+    styleKey: string;
+    completedCount: number;
+    failedCount: number;
+  };
+  "headshot_image:succeeded": {
+    headshotImageId: string;
+    batchId: string;
+    userId: string;
+    styleKey: string;
+  };
+  "headshot_image:failed": {
+    headshotImageId: string;
+    batchId: string;
+    userId: string;
+    styleKey: string;
+    errorMessage?: string;
+  };
 };
 
 type Handler<T> = (payload: T) => Promise<void>;

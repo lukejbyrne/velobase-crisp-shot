@@ -9,6 +9,7 @@ Product modules live under `src/modules/<name>/`. They are the right place for p
 | Module | Purpose |
 | --- | --- |
 | [AI Chat](./ai-chat/README.md) | Streaming chat, agent configuration, tool execution, and chat UI foundations |
+| [Headshots (CrispShot)](../../../src/modules/headshots/README.md) | AI headshot generation with per-image credit freeze, consume and refund |
 | [Example module](../../../src/modules/example/README.md) | Reference layout for adding product-specific modules |
 
 ## Rules

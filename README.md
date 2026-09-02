@@ -1,5 +1,10 @@
 # Velobase Harness
 
+> **This repository ships CrispShot** — a paid AI headshot SaaS built on Harness.
+> The product lives entirely in [`src/modules/headshots`](src/modules/headshots/README.md);
+> everything below documents the framework it is built on.
+
+
 <p align="center">
   <img src="public/banner.gif" alt="Velobase Harness" />
 </p>

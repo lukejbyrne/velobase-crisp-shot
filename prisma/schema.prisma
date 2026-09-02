@@ -248,6 +248,8 @@ model User {
   touchSchedules          TouchSchedule[]
   supportTickets          SupportTicket[]
   notificationPreferences UserNotificationPreference[]
+  headshotBatches         HeadshotBatch[]
+  headshotImages          HeadshotImage[]
 
   @@index([createdAt])
   @@index([deviceKeyAtSignup, createdAt])
@@ -1549,4 +1551,96 @@ model SupportSyncCursor {
   updatedAt DateTime @updatedAt @map("updated_at")
 
   @@map("support_sync_cursors")
+}
+
+// ============================================================
+// CrispShot — AI headshot generation
+// ============================================================
+
+enum HeadshotBatchStatus {
+  QUEUED
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+enum HeadshotImageStatus {
+  QUEUED
+  PROCESSING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+/// Local mirror of the Velobase credit lifecycle for a single headshot image.
+/// The authoritative ledger lives in Velobase billing; this column exists so the
+/// worker can stay idempotent and the UI can explain where a credit currently sits.
+enum HeadshotCreditState {
+  NONE
+  FROZEN
+  CONSUMED
+  UNFROZEN
+}
+
+/// One generation request: a single source portrait rendered in one style,
+/// fanned out into `requestedCount` independently billed images.
+model HeadshotBatch {
+  id               String              @id @default(cuid())
+  userId           String              @map("user_id")
+  styleKey         String              @map("style_key")
+  sourceImageUrl   String              @map("source_image_url")
+  sourceStorageKey String              @map("source_storage_key")
+  status           HeadshotBatchStatus @default(QUEUED)
+  requestedCount   Int                 @default(4) @map("requested_count")
+  completedCount   Int                 @default(0) @map("completed_count")
+  failedCount      Int                 @default(0) @map("failed_count")
+  creditsPerImage  Int                 @default(1) @map("credits_per_image")
+  provider         String
+  model            String
+  errorMessage     String?             @map("error_message")
+  startedAt        DateTime?           @map("started_at")
+  completedAt      DateTime?           @map("completed_at")
+  createdAt        DateTime            @default(now()) @map("created_at")
+  updatedAt        DateTime            @updatedAt @map("updated_at")
+
+  images HeadshotImage[]
+  user   User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([status, createdAt])
+  @@map("headshot_batches")
+}
+
+/// One image inside a batch. This row id doubles as the Velobase billing
+/// transaction id, which is what makes freeze/consume/unfreeze idempotent
+/// across worker retries.
+model HeadshotImage {
+  id                    String              @id @default(cuid())
+  batchId               String              @map("batch_id")
+  userId                String              @map("user_id")
+  position              Int
+  status                HeadshotImageStatus @default(QUEUED)
+  creditState           HeadshotCreditState @default(NONE) @map("credit_state")
+  creditAmount          Int                 @default(1) @map("credit_amount")
+  imageGenerationTaskId String?             @map("image_generation_task_id")
+  imageUrl              String?             @map("image_url")
+  storageKey            String?             @map("storage_key")
+  contentType           String?             @map("content_type")
+  byteLength            Int?                @map("byte_length")
+  errorMessage          String?             @map("error_message")
+  forcedFailure         Boolean             @default(false) @map("forced_failure")
+  attempts              Int                 @default(0)
+  startedAt             DateTime?           @map("started_at")
+  completedAt           DateTime?           @map("completed_at")
+  createdAt             DateTime            @default(now()) @map("created_at")
+  updatedAt             DateTime            @updatedAt @map("updated_at")
+
+  batch HeadshotBatch @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  user  User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([batchId, position])
+  @@index([userId, status, createdAt])
+  @@index([batchId])
+  @@index([status, createdAt])
+  @@map("headshot_images")
 }

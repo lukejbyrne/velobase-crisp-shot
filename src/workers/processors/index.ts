@@ -70,3 +70,6 @@ export {
 } from "./google-ads-upload";
 
 export { processImageGenerationJob } from "./image-generation";
+
+// CrispShot headshots module (processor lives with the module it belongs to).
+export { processHeadshotGenerationJob } from "@/modules/headshots/worker/processor";

@@ -68,3 +68,12 @@ export {
   IMAGE_GENERATION_QUEUE_NAME,
   type ImageGenerationJobData,
 } from "./image-generation.queue";
+
+// CrispShot headshots module (queue lives with the module it belongs to).
+export {
+  enqueueHeadshotImage,
+  getHeadshotGenerationQueue,
+  HEADSHOT_GENERATION_MAX_ATTEMPTS,
+  HEADSHOT_GENERATION_QUEUE_NAME,
+  type HeadshotGenerationJobData,
+} from "@/modules/headshots/worker/queue";

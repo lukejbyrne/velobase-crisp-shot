@@ -372,16 +372,27 @@ const LEGACY_AND_SPECIAL_TIERS: SubscriptionConfig[] = [
   // Strategy decision: Remove intermediate/confusing tiers. Funnel users to $4.99 Weekly or $39 Pro.
 ];
 
+// ============================================================================
+// CrispShot credit packs.
+// One credit buys one successfully generated headshot; a batch of four costs
+// four credits. Pack sizes are therefore expressed in whole batches so the
+// pricing page can say "5 batches" rather than an abstract credit number.
+// Credits never expire, and failed generations are refunded automatically.
+// ============================================================================
 const CREDITS_PACKAGES = [
   {
     id: 'prod-credits-atomic-001',
-    name: 'Mini Pack',
-    credits: 1500,
-    price: 499,
-    originalPrice: 599,
-    description: { en: 'Best for getting started', features: ['1,500 credits', 'Never expires'] },
+    name: 'Taster',
+    credits: 8,
+    price: 900,
+    originalPrice: 1200,
+    description: {
+      en: 'Try two looks before you commit',
+      features: ['8 headshots', '2 style batches', 'Credits never expire'],
+    },
     sortOrder: 10,
     metadata: {
+      headshots: { batches: 2 },
       crypto: {
         enabled: true,
         feeRate: 0.128, // 12.8% - small amount, higher fee
@@ -391,13 +402,17 @@ const CREDITS_PACKAGES = [
   },
   {
     id: 'prod-credits-starter-001',
-    name: 'Starter Pack',
-    credits: 5000,
-    price: 999,
-    originalPrice: 1299,
-    description: { en: 'Perfect for quick projects', features: ['5,000 credits', 'Never expires'] },
+    name: 'Starter',
+    credits: 20,
+    price: 1900,
+    originalPrice: 2400,
+    description: {
+      en: 'Enough to find the shot you actually like',
+      features: ['20 headshots', '5 style batches', 'Credits never expire'],
+    },
     sortOrder: 11,
     metadata: {
+      headshots: { batches: 5 },
       crypto: {
         enabled: true,
         feeRate: 0.098, // 9.8%
@@ -407,13 +422,23 @@ const CREDITS_PACKAGES = [
   },
   {
     id: 'prod-credits-popular-001',
-    name: 'Creator Pack',
-    credits: 20000,
-    price: 2900,
-    originalPrice: 3999,
-    description: { en: 'Best value for creators', badge: 'BEST VALUE', features: ['20,000 credits', 'Never expires', 'Save 27%'] },
+    name: 'Professional',
+    credits: 60,
+    price: 3900,
+    originalPrice: 5400,
+    description: {
+      en: 'Every style, several times over',
+      badge: 'MOST POPULAR',
+      features: [
+        '60 headshots',
+        '15 style batches',
+        'Credits never expire',
+        'Save 28%',
+      ],
+    },
     sortOrder: 12,
     metadata: {
+      headshots: { batches: 15 },
       crypto: {
         enabled: true,
         feeRate: 0.064, // 6.4% - larger amount, lower fee
@@ -423,16 +448,26 @@ const CREDITS_PACKAGES = [
   },
   {
     id: 'prod-credits-studio-001',
-    name: 'Studio Pack',
-    credits: 50000,
-    price: 6900,
-    originalPrice: 9900,
-    description: { en: 'Massive credits for heavy users', badge: 'PRO CHOICE', features: ['50,000 credits', 'Never expires', 'Save 30%'] },
+    name: 'Studio',
+    credits: 150,
+    price: 7900,
+    originalPrice: 12000,
+    description: {
+      en: 'Team headshots without booking a studio',
+      badge: 'BEST VALUE',
+      features: [
+        '150 headshots',
+        '37 style batches',
+        'Credits never expire',
+        'Save 34%',
+      ],
+    },
     sortOrder: 13,
     metadata: {
+      headshots: { batches: 37 },
       crypto: {
         enabled: true,
-        feeRate: 0.042, // 4.2% - aligned with Premium tier
+        feeRate: 0.042, // 4.2% - aligned with the largest tier
         label: 'Crypto processing fee',
       },
     },
@@ -535,36 +570,33 @@ const MULTI_CURRENCY_PRICES: Record<string, Partial<Record<CurrencyCode, MultiCu
   // CREDITS PACKAGES
   // ============================================================================
   
-  // Mini Pack $4.99 -> €4.99 / £3.99 / CHF 4.99 / A$7.99
-  // Original: $5.99 -> €5.99 / £4.99 / CHF 5.99 / A$9.99
+  // Taster $9 -> EUR 9 / GBP 7 / CHF 9 / AUD 14
   'prod-credits-atomic-001': {
-    EUR: { amount: 499, originalAmount: 599 },
-    GBP: { amount: 399, originalAmount: 499 },
-    CHF: { amount: 499, originalAmount: 599 },
-    AUD: { amount: 799, originalAmount: 999 },
+    EUR: { amount: 900, originalAmount: 1200 },
+    GBP: { amount: 700, originalAmount: 900 },
+    CHF: { amount: 900, originalAmount: 1200 },
+    AUD: { amount: 1400, originalAmount: 1900 },
   },
-  // Starter Pack $9.99 -> €9.99 / £7.99 / CHF 9.99 / A$15.99
-  // Original: $12.99 -> €12.99 / £10.99 / CHF 12.99 / A$20.99
+  // Starter $19 -> EUR 19 / GBP 15 / CHF 19 / AUD 29
   'prod-credits-starter-001': {
-    EUR: { amount: 999, originalAmount: 1299 },
-    GBP: { amount: 799, originalAmount: 1099 },
-    CHF: { amount: 999, originalAmount: 1299 },
-    AUD: { amount: 1599, originalAmount: 2099 },
+    EUR: { amount: 1900, originalAmount: 2400 },
+    GBP: { amount: 1500, originalAmount: 1900 },
+    CHF: { amount: 1900, originalAmount: 2400 },
+    AUD: { amount: 2900, originalAmount: 3700 },
   },
-  // Creator Pack $29 -> €29 / £23 / CHF 29 / A$45.00
-  // Original: $39.99 -> €39.99 / £31.99 / CHF 39.99 / A$62.99
+  // Professional $39 -> EUR 39 / GBP 32 / CHF 39 / AUD 59
   'prod-credits-popular-001': {
-    EUR: { amount: 2900, originalAmount: 3999 },
-    GBP: { amount: 2300, originalAmount: 3199 },
-    CHF: { amount: 2900, originalAmount: 3999 },
-    AUD: { amount: 4500, originalAmount: 6299 },
+    EUR: { amount: 3900, originalAmount: 5400 },
+    GBP: { amount: 3200, originalAmount: 4400 },
+    CHF: { amount: 3900, originalAmount: 5400 },
+    AUD: { amount: 5900, originalAmount: 8200 },
   },
-  // Studio Pack $69 -> €69 / £54 / CHF 69 / A$109.00
+  // Studio $79 -> EUR 79 / GBP 63 / CHF 79 / AUD 119
   'prod-credits-studio-001': {
-    EUR: { amount: 6900, originalAmount: 9900 },
-    GBP: { amount: 5400, originalAmount: 7800 },
-    CHF: { amount: 6900, originalAmount: 9900 },
-    AUD: { amount: 10900, originalAmount: 15500 },
+    EUR: { amount: 7900, originalAmount: 12000 },
+    GBP: { amount: 6300, originalAmount: 9600 },
+    CHF: { amount: 7900, originalAmount: 12000 },
+    AUD: { amount: 11900, originalAmount: 18000 },
   },
 
   // ============================================================================
