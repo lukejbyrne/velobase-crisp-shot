@@ -334,6 +334,26 @@ async function resolveProviderSourceUrl(params: {
   }
 }
 
+/**
+ * A URL the browser can actually load for a stored image.
+ *
+ * Storage is private, so the public URL recorded at generation time is not
+ * fetchable unless the bucket is published. Signing per request keeps the
+ * gallery private — the link is short-lived and scoped to one object — rather
+ * than exposing every customer's headshots to anyone with the URL.
+ */
+async function toViewableUrl(
+  storageKey: string | null,
+  fallback: string | null,
+): Promise<string | null> {
+  if (!storageKey) return fallback;
+  try {
+    return await getStorageSignedUrl(storageKey, 3600);
+  } catch {
+    return fallback;
+  }
+}
+
 export type HeadshotBatchView = Awaited<ReturnType<typeof getBatch>>;
 
 export async function getBatch(params: { userId: string; batchId: string }) {
@@ -366,7 +386,7 @@ export async function listBatches(params: ListParams) {
     nextCursor = batches.pop()!.id;
   }
 
-  return { items: batches.map(toBatchView), nextCursor };
+  return { items: await Promise.all(batches.map(toBatchView)), nextCursor };
 }
 
 /** Completed images only — this backs the private results gallery. */
@@ -392,14 +412,16 @@ export async function listImages(params: ListParams & { batchId?: string }) {
   }
 
   return {
-    items: images.map((image) => ({
-      id: image.id,
-      batchId: image.batchId,
-      position: image.position,
-      imageUrl: image.imageUrl,
-      styleKey: image.styleKey,
-      createdAt: image.createdAt,
-    })),
+    items: await Promise.all(
+      images.map(async (image) => ({
+        id: image.id,
+        batchId: image.batchId,
+        position: image.position,
+        imageUrl: await toViewableUrl(image.storageKey, image.imageUrl),
+        styleKey: image.styleKey,
+        createdAt: image.createdAt,
+      })),
+    ),
     nextCursor,
   };
 }
@@ -615,7 +637,7 @@ type BatchWithImages = Prisma.HeadshotBatchGetPayload<{
   include: { images: true };
 }>;
 
-function toBatchView(batch: BatchWithImages) {
+async function toBatchView(batch: BatchWithImages) {
   const images = [...batch.images].sort((a, b) => a.position - b.position);
   return {
     id: batch.id,
@@ -631,17 +653,19 @@ function toBatchView(batch: BatchWithImages) {
     errorMessage: batch.errorMessage,
     createdAt: batch.createdAt,
     completedAt: batch.completedAt,
-    images: images.map((image) => ({
-      id: image.id,
-      position: image.position,
-      styleKey: image.styleKey,
-      status: image.status,
-      creditState: image.creditState,
-      creditAmount: image.creditAmount,
-      imageUrl: image.imageUrl,
-      errorMessage: image.errorMessage,
-      forcedFailure: image.forcedFailure,
-      completedAt: image.completedAt,
-    })),
+    images: await Promise.all(
+      images.map(async (image) => ({
+        id: image.id,
+        position: image.position,
+        styleKey: image.styleKey,
+        status: image.status,
+        creditState: image.creditState,
+        creditAmount: image.creditAmount,
+        imageUrl: await toViewableUrl(image.storageKey, image.imageUrl),
+        errorMessage: image.errorMessage,
+        forcedFailure: image.forcedFailure,
+        completedAt: image.completedAt,
+      })),
+    ),
   };
 }
