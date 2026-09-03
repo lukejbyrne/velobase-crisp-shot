@@ -276,8 +276,20 @@ mockModule(new URL("../../../server/storage.ts", import.meta.url).href, {
   namedExports: {
     getStorageSignedUrl: async (key: string) =>
       `https://signed.example/${key}?token=abc`,
+    getObject: async () => Buffer.from("fake-image-bytes"),
   },
 });
+
+mockModule(
+  new URL("../../../server/ai/image-generation/index.ts", import.meta.url).href,
+  {
+    namedExports: {
+      getImageGenerationProvider: () => ({
+        uploadInputImage: async () => "https://tempfile.kie/portrait.jpg",
+      }),
+    },
+  },
+);
 
 mockModule(new URL("../../../config/modules.ts", import.meta.url).href, {
   namedExports: {

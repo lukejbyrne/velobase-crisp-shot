@@ -10,7 +10,7 @@ import type { HeadshotBatch, HeadshotImage, Prisma } from "@prisma/client";
 import { db } from "@/server/db";
 import { createLogger } from "@/lib/logger";
 import { appEvents } from "@/server/events/bus";
-import { getStorageSignedUrl } from "@/server/storage";
+import { getObject, getStorageSignedUrl } from "@/server/storage";
 import { isModuleEnabled } from "@/config/modules";
 import { enqueueHeadshotImage } from "../worker/queue";
 import {
@@ -153,11 +153,19 @@ export async function createBatch(params: CreateBatchParams) {
   // Picks cycle across the batch's image slots.
   const slotStyles = assignStylesToSlots(params.styleKeys, batchSize);
 
+  // The provider fetches source images server-side, so a private bucket is
+  // unreachable to it. Hand the bytes over once per batch instead of making
+  // the user's portrait publicly readable; all four images share the result.
+  const providerSourceUrl = await resolveProviderSourceUrl({
+    storageKey: params.sourceStorageKey,
+    fallbackUrl: params.sourceImageUrl,
+  });
+
   const batch = await db.headshotBatch.create({
     data: {
       userId: params.userId,
       styleKeys: params.styleKeys,
-      sourceImageUrl: params.sourceImageUrl,
+      sourceImageUrl: providerSourceUrl,
       sourceStorageKey: params.sourceStorageKey,
       status: "QUEUED",
       requestedCount: batchSize,
@@ -290,6 +298,40 @@ async function releaseReservations(
       completedAt: new Date(),
     },
   });
+}
+
+/**
+ * Gives the image provider a URL it can actually fetch.
+ *
+ * Falls back to the stored public URL when the provider cannot re-host, so a
+ * provider without that capability still works wherever storage is public.
+ */
+async function resolveProviderSourceUrl(params: {
+  storageKey: string;
+  fallbackUrl: string;
+}): Promise<string> {
+  const { getImageGenerationProvider } =
+    await import("@/server/ai/image-generation");
+
+  try {
+    const provider = getImageGenerationProvider(headshotConfig.provider);
+    if (!provider.uploadInputImage) return params.fallbackUrl;
+
+    const bytes = await getObject(params.storageKey);
+    return await provider.uploadInputImage(
+      bytes,
+      params.storageKey.split("/").pop() ?? "portrait.jpg",
+    );
+  } catch (error) {
+    // Not fatal on its own: the batch can still succeed if the fallback URL
+    // happens to be reachable, and if it is not the images fail individually
+    // and refund rather than losing the whole batch here.
+    logger.error(
+      { err: error, storageKey: params.storageKey },
+      "Could not re-host the source portrait with the provider",
+    );
+    return params.fallbackUrl;
+  }
 }
 
 export type HeadshotBatchView = Awaited<ReturnType<typeof getBatch>>;

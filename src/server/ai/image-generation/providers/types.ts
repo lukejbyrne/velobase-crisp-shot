@@ -67,6 +67,14 @@ export interface ImageGenerationProviderAdapter {
   ): Promise<number | undefined>;
   listModels(): Promise<ProviderModel[]>;
   getCapabilities(): ProviderCapabilities;
+  /**
+   * Re-hosts a source image on the provider and returns a URL it can fetch.
+   *
+   * Providers download input images server-side, so a private bucket is
+   * unreachable to them. Implement this to hand the bytes over directly
+   * instead of publishing user uploads to the internet.
+   */
+  uploadInputImage?(buffer: Buffer, filename: string): Promise<string>;
 }
 
 export class ImageGenerationProviderError extends Error {

@@ -19,6 +19,10 @@ const KIE_PROVIDER_ID = "kie" as const;
 const MAX_ATTEMPTS = 3;
 const MAX_INPUT_URLS = 16;
 
+/** Kie serves file upload from a different host than the task API. */
+const KIE_FILE_UPLOAD_URL =
+  "https://kieai.redpandaai.co/api/file-base64-upload";
+
 /** Aspect ratios Kie documents as 1K-only. */
 const ONE_K_ONLY_RATIOS = new Set(["5:4", "4:5"]);
 
@@ -146,6 +150,56 @@ export class KieProvider implements ImageGenerationProviderAdapter {
   /** Kie has no model-listing endpoint; models are chosen by id from its docs. */
   async listModels(): Promise<ProviderModel[]> {
     return [];
+  }
+
+  /**
+   * Uploads bytes to Kie's temporary file store and returns a fetchable URL.
+   *
+   * Kie downloads `input_urls` server-side, so anything behind private storage
+   * fails with "Image fetch failed". Its own file API is the documented answer,
+   * and it keeps the user's portrait out of any public bucket — the temporary
+   * URL expires on its own.
+   *
+   * Note the host differs from the main API base.
+   */
+  async uploadInputImage(buffer: Buffer, filename: string): Promise<string> {
+    if (!this.config.apiKey) {
+      throw new ImageGenerationProviderError("KIE_API is not configured", {
+        provider: KIE_PROVIDER_ID,
+      });
+    }
+
+    const response = await fetch(`${KIE_FILE_UPLOAD_URL}`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${this.config.apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        base64Data: `data:image/jpeg;base64,${buffer.toString("base64")}`,
+        uploadPath: "headshot-sources",
+        fileName: filename,
+      }),
+      signal: AbortSignal.timeout(this.config.timeoutMs * 4),
+    });
+
+    const parsed = safeJsonParse(await response.text()) as
+      | { code?: number; msg?: string; data?: { downloadUrl?: string } }
+      | undefined;
+
+    const url = parsed?.data?.downloadUrl;
+    if (!response.ok || !url) {
+      throw new ImageGenerationProviderError(
+        parsed?.msg ?? "Kie file upload failed",
+        {
+          provider: KIE_PROVIDER_ID,
+          httpStatus: response.status,
+          retryable: true,
+        },
+      );
+    }
+
+    return url;
   }
 
   getCapabilities(): ProviderCapabilities {
